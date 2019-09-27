@@ -1,0 +1,24 @@
+{
+  "name": "mpelec-alpha",
+  "version": "0.0.1",
+  "description": "Player for human use",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo",
+    "start": "electron ."
+  },
+  "author": "dixeran",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "electron": "^6.0.10",
+    "node-addon-api": "^1.7.1"
+  },
+  "dependencies": {
+    "bindings": "^1.5.0"
+  },
+  "cmake-js": {
+    "runtime": "electron",
+    "runtimeVersion": "6.0.10",
+    "arch": "x64"
+  }
+}

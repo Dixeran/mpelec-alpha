@@ -1,0 +1,8 @@
+# node ignore
+node_modules
+
+# Native addon ignore
+build
+
+# test file ignore
+*.mp4
