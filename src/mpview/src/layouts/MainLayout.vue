@@ -1,0 +1,57 @@
+<template>
+  <q-layout view="hHh Lpr fFf" class="mpv-layout" :class="is_playing ? '' : 'bg-white'">
+    <!-- nav -->
+    <q-bar class="q-electron-drag bg-white mpv-nav">
+      <div class="cursor-pointer">File</div>
+      <div class="cursor-pointer">Edit</div>
+      <div class="cursor-pointer gt-xs">View</div>
+      <div class="cursor-pointer gt-xs">Window</div>
+      <div class="cursor-pointer">Help</div>
+      <q-space />
+      <q-btn dense flat icon="minimize" @click="form_control('minimize')" />
+      <q-btn dense flat icon="crop_square" @click="form_control('maximize')" />
+      <q-btn dense flat icon="close" @click="form_control('close')" />
+    </q-bar>
+
+    <q-page-container>
+      <!-- This is where pages get injected -->
+      <router-view />
+    </q-page-container>
+  </q-layout>
+</template>
+
+<script>
+const { ipcRenderer } = window.require("electron");
+export default {
+  // name: 'LayoutName',
+  data() {
+    return {
+      is_playing: false
+    };
+  },
+  methods: {
+    form_control(cmd) {
+      ipcRenderer.send(cmd);
+    }
+  },
+  mounted() {
+    ipcRenderer.on("update-play-detail", (event, arg) => {});
+  }
+};
+</script>
+
+<style scoped>
+.bg-white {
+  background-color: white;
+}
+.mpv-nav {
+  box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
+  margin: 0 24px;
+  border-radius: 65535px;
+}
+
+.mpv-layout {
+  padding-top: 24px;
+  transition: all ease 0.5s;
+}
+</style>

@@ -1,9 +1,17 @@
 const electron = require("electron");
 const addon = require("bindings")("addon");
+const PSTATE = require("./src_electron/PlayState");
+require("./src_electron/AppEvent")();
 
-electron.ipcMain.on('close', (event, ary) => {
-  electron.app.quit();
-});
+global.shared = {
+  forms: {
+    osc: null,
+    pwin: null,
+    is_maximized: false
+  },
+  play_state: PSTATE.NONE,
+  play_detail: null
+}
 
 electron.app.on("ready", function () {
   let osc = new electron.BrowserWindow({
@@ -13,7 +21,36 @@ electron.app.on("ready", function () {
     frame: false,
     transparent: true,
     backgroundColor: "#00FFFFFF",
+    titleBarStyle: 'hidden',
+    webPreferences: {
+      backgroundThrottling: false,
+      nodeIntegration: true,
+      webviewTag: true
+    },
   });
+  shared.forms.osc = osc;
+
+  let _bound = osc.getBounds();
+  let win = new electron.BrowserWindow({
+    width: _bound.width,
+    height: _bound.height,
+    x: _bound.x,
+    y: _bound.y,
+    frame: false,
+    webPreferences: {
+      nodeIntegration: true
+    },
+    backgroundColor: "#000000",
+    show: false,
+    skipTaskbar: true,
+    webPreferences: {
+      backgroundThrottling: false,
+      nodeIntegration: true,
+      webviewTag: true
+    }
+  });
+  shared.forms.pwin = win;
+  let hwnd = win.getNativeWindowHandle().readInt32LE();
 
   osc.on("move", () => {
     win.setBounds(osc.getBounds());
@@ -30,25 +67,4 @@ electron.app.on("ready", function () {
     osc.setSize(_size[0] + 1, _size[1] + 1);
     console.log("ready to play");
   });
-
-  let _bound = osc.getBounds();
-  let win = new electron.BrowserWindow({
-    width: _bound.width,
-    height: _bound.height,
-    x: _bound.x,
-    y: _bound.y,
-    frame: false,
-    webPreferences: {
-      nodeIntegration: true
-    },
-    backgroundColor: "#000000",
-    show: false,
-    skipTaskbar: true
-  });
-  let hwnd = win.getNativeWindowHandle().readInt32LE();
-  const mpv_handle = addon.init(hwnd);
-  console.log(mpv_handle);
-  addon.play();
-  console.log("start play");
-  win.show();
 })
