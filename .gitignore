@@ -3,6 +3,7 @@ node_modules
 
 # Native addon ignore
 build
+mpv-1.dll
 
 # test file ignore
 *.mp4
