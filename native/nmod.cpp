@@ -15,8 +15,10 @@ Napi::ArrayBuffer InitMpv(const Napi::CallbackInfo &info)
     }
     int64_t wid = info[0].As<Napi::Number>().Int32Value();
     ctx = mpv_create();
-    // mpv_set_property(ctx, "wid", MPV_FORMAT_INT64, &wid);
-    // mpv_initialize(ctx);
+    mpv_set_property(ctx, "wid", MPV_FORMAT_INT64, &wid);
+    mpv_set_option_string(ctx, "config-dir", "./mpv_config");
+    mpv_set_option_string(ctx, "config", "yes");
+    mpv_initialize(ctx);
     Napi::ArrayBuffer js_ctx = Napi::ArrayBuffer::New(env, &ctx, 8);
     return js_ctx;
 }
@@ -29,7 +31,9 @@ Napi::Value Play(const Napi::CallbackInfo &info)
         Napi::TypeError::New(env, "Need arg:file to play.").ThrowAsJavaScriptException();
         return env.Null();
     }
-    const char *cmd[] = {"loadfile", "test.mp4", NULL};
+    // get path
+    std::string path = info[0].As<Napi::String>().Utf8Value();
+    const char *cmd[] = {"loadfile", path.c_str(), NULL};
     mpv_command(ctx, cmd);
     return env.Null();
 }
