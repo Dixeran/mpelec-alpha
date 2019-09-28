@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="hHh Lpr fFf" class="mpv-layout" :class="is_playing ? '' : 'bg-white'">
+  <q-layout view="hHh Lpr fFf" class="mpv-layout" :class="is_playing ? '' : 'show-bg'">
     <!-- nav -->
     <q-bar class="q-electron-drag bg-white mpv-nav">
       <div class="cursor-pointer">File</div>
@@ -10,6 +10,7 @@
       <q-space />
       <q-btn dense flat icon="minimize" @click="form_control('minimize')" />
       <q-btn dense flat icon="crop_square" @click="form_control('maximize')" />
+      <q-btn dense flat icon="fullscreen" @click="form_control('fullscreen')" />
       <q-btn dense flat icon="close" @click="form_control('close')" />
     </q-bar>
 
@@ -35,23 +36,33 @@ export default {
     }
   },
   mounted() {
-    ipcRenderer.on("update-play-detail", (event, arg) => {});
+    ipcRenderer.on("play-start", (event, arg) => {
+      this.is_playing = true;
+      this.$router.push("play");
+    });
   }
 };
 </script>
 
-<style scoped>
+<style lang="stylus" scoped>
 .bg-white {
   background-color: white;
 }
+
+.mpv-layout {
+  height: 100vh;
+  padding-top: 24px;
+  transition: all ease 0.5s;
+  border-radius: 10px;
+
+  &.show-bg {
+    background-color: whitesmoke;
+  }
+}
+
 .mpv-nav {
   box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
   margin: 0 24px;
   border-radius: 65535px;
-}
-
-.mpv-layout {
-  padding-top: 24px;
-  transition: all ease 0.5s;
 }
 </style>
