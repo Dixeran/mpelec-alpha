@@ -4,11 +4,13 @@ const {
   BrowserWindow
 } = require('electron');
 const PSTATE = require("./PlayState");
+const IPC = require("./IPC_client");
 
 let mem_bounds = undefined;
 
 module.exports = function (addon) {
   ipcMain.on('close', (e, arg) => {
+    IPC.quit();
     app.quit();
   });
 

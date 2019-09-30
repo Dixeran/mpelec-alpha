@@ -10,3 +10,7 @@ export default {
   // name: 'PageName',
 };
 </script>
+
+<style lang="stylus" scoped>
+
+</style>

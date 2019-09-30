@@ -3,6 +3,8 @@ const addon = require("bindings")("addon");
 const PSTATE = require("./src_electron/PlayState");
 const WindowConfig = require("./src_electron/WindowConfig");
 require("./src_electron/AppEvent")(addon);
+const IPC = require('./src_electron/IPC_client');
+
 global.shared = {
   forms: {
     osc: null,
@@ -61,6 +63,7 @@ electron.app.on("ready", function () {
     _size = osc.getSize();
     osc.setSize(_size[0] + 1, _size[1] + 1);
     osc.setBackgroundColor("#00FFFFFF");
+    IPC.init();
     console.log("ready to play");
   });
 })
