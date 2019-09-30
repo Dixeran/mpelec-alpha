@@ -22,7 +22,8 @@
 </template>
 
 <script>
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer, remote } = window.require("electron");
+const IPC = remote.require("./src_electron/IPC_client");
 export default {
   // name: 'LayoutName',
   data() {
@@ -36,7 +37,7 @@ export default {
     }
   },
   mounted() {
-    ipcRenderer.on("play-start", (event, arg) => {
+    ipcRenderer.on("playback-start", () => {
       this.is_playing = true;
       this.$router.push("play");
     });

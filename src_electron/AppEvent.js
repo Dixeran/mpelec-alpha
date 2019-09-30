@@ -100,8 +100,9 @@ module.exports = function (addon) {
     } = arg;
 
     addon.play(path);
-    osc.webContents.send('play-start');
+    osc.webContents.send('playback-start');
     shared.play_state = PSTATE.PLAY;
+    // TODO: fit video size.
     pwin.restore();
   })
 }

@@ -1,13 +1,18 @@
+import MainLayout from 'layouts/MainLayout.vue';
+import IndexPage from 'pages/Index.vue';
+import PlayPage from 'pages/Play.vue';
+
+
 const routes = [{
   path: '/',
-  component: () => import('layouts/MainLayout.vue'),
+  component: MainLayout,
   children: [{
     path: '',
-    component: () => import('pages/Index.vue')
+    component: IndexPage
   }, {
     path: '/play',
     name: 'play',
-    component: () => import('pages/Play.vue')
+    component: PlayPage
   }]
 }]
 
