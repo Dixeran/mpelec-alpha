@@ -16,6 +16,9 @@ class MpvEvent extends events {
   set_property(name, args) {
     return this.send_command('set_property', [name, ...args]);
   }
+  get_property(name) {
+    return this.send_command('get_property', [name]);
+  }
   observe_property(prop_name) {
     return this.send_command('observe_property', [++observer_id, prop_name]);
   }
@@ -91,9 +94,11 @@ socket.on('data', (data) => {
       if (res.event === 'property-change')
         // event for observe property
         my_emitter.emit(`${res.name}-change`, res.data);
-      else
+      else {
         // trival events
+        console.log(res);
         my_emitter.emit(res.event, res.data);
+      }
     }
   });
 })
