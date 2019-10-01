@@ -28,7 +28,7 @@ module.exports = function (addon) {
 
       if (old_state === "fullscreen") {
         osc.setFullScreen(false);
-        pwin.setBounds(osc.getBounds());
+        // pwin.setBounds(osc.getBounds());
         shared.forms.window_state = "maximized";
         return;
       } else if (old_state === "maximized") {
@@ -39,13 +39,13 @@ module.exports = function (addon) {
       mem_bounds = osc.getBounds();
       if (shared.play_state === PSTATE.NONE) {
         // we shouldn't call pwin.maximize() when it's playing
-        pwin.maximize();
-        osc.setBounds(pwin.getBounds());
-        pwin.hide();
+        aux.maximize();
+        osc.setBounds(aux.getBounds());
+        aux.hide();
         shared.forms.window_state = "maximized";
       } else {
         osc.maximize();
-        pwin.setBounds(osc.getBounds());
+        // pwin.setBounds(osc.getBounds());
       }
       shared.forms.window_state = "maximized";
     } else if (state === "minimized") {
@@ -61,16 +61,17 @@ module.exports = function (addon) {
     } else if (state === "normal") {
       console.log("normal");
       osc.setBounds(mem_bounds);
-      pwin.setBounds(osc.getBounds());
+      // pwin.setBounds(osc.getBounds());
       shared.forms.window_state = "normal";
     } else if (state === "fullscreen") {
       console.log("fullscreen");
       // store current bounds
-      mem_bounds = osc.getBounds();
+      if (old_state !== 'fullscreen')
+        mem_bounds = osc.getBounds();
 
       osc.setFullScreen(true);
       shared.forms.window_state = "fullscreen";
-      pwin.setBounds(osc.getBounds());
+      // pwin.setBounds(osc.getBounds());
     }
   }
 

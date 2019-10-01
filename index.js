@@ -40,8 +40,8 @@ electron.app.on("ready", function () {
     ...WindowConfig.PWIN
   });
   shared.forms.pwin = win;
-  let hwnd = win.getNativeWindowHandle().readInt32LE();
-  addon.init(hwnd);
+  let hwnd_pwin = win.getNativeWindowHandle().readInt32LE();
+  addon.init(hwnd_pwin);
 
   // create main window
   let osc = new electron.BrowserWindow({
@@ -49,14 +49,9 @@ electron.app.on("ready", function () {
     parent: win
   });
   shared.forms.osc = osc;
-
-  // bind window event
-  osc.on("move", () => {
-    win.setBounds(osc.getBounds());
-  });
-  osc.on("resize", () => {
-    win.setBounds(osc.getBounds());
-  });
+  let hwnd_osc = osc.getNativeWindowHandle().readInt32LE();
+  // bind window movement
+  addon.bind_window(hwnd_osc, hwnd_pwin);
 
   osc.loadURL("http://localhost:8080").then(() => {
     // prevent black bakcgournd when offscreen

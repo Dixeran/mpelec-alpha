@@ -4,6 +4,25 @@
 
 // life time with NodeJS main thread.(?)
 mpv_handle *ctx = nullptr;
+HWND osc = NULL, pwin = NULL;
+WNDPROC old_proc = NULL;
+
+LRESULT CALLBACK _HookWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    if (uMsg == WM_MOVE || uMsg == WM_SIZE)
+    {
+        RECT osc_rect;
+        GetWindowRect(osc, &osc_rect);
+        SetWindowPos(pwin,
+                     HWND_TOPMOST,
+                     osc_rect.left,
+                     osc_rect.top,
+                     osc_rect.right - osc_rect.left,
+                     osc_rect.bottom - osc_rect.top,
+                     SWP_NOZORDER);
+    }
+    return CallWindowProc(old_proc, hwnd, uMsg, wParam, lParam);
+}
 
 Napi::ArrayBuffer InitMpv(const Napi::CallbackInfo &info)
 {
@@ -38,9 +57,27 @@ Napi::Value Play(const Napi::CallbackInfo &info)
     return env.Null();
 }
 
+Napi::Value BindMove(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2)
+    {
+        Napi::TypeError::New(env, "Need arg:file to play.").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+    HWND osc_hwnd = (HWND)(info[0].As<Napi::Number>().Int32Value());
+    HWND pwin_hwnd = (HWND)(info[1].As<Napi::Number>().Int32Value());
+    osc = osc_hwnd;
+    pwin = pwin_hwnd;
+    old_proc = (WNDPROC)GetWindowLongPtr(pwin, GWLP_WNDPROC);
+    SetWindowLongPtr(osc_hwnd, GWLP_WNDPROC, (LONG_PTR)_HookWindowProc);
+    return env.Null();
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "init"), Napi::Function::New(env, InitMpv));
+    exports.Set(Napi::String::New(env, "bind_window"), Napi::Function::New(env, BindMove));
     exports.Set(Napi::String::New(env, "play"), Napi::Function::New(env, Play));
     return exports;
 }
