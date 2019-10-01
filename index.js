@@ -26,10 +26,12 @@ electron.app.on("ready", function () {
   let _aux = new electron.BrowserWindow({
     show: false
   });
+  _aux.minimize();
   _aux.on('restore', () => {
     _aux.hide();
     shared.forms.osc.show();
     if (shared.play_state !== PSTATE.NONE) shared.forms.pwin.restore();
+    else _aux.minimize();
   });
   shared.forms.aux = _aux;
 

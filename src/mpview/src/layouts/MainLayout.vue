@@ -16,7 +16,7 @@
 
     <q-page-container>
       <!-- This is where pages get injected -->
-      <router-view />
+      <router-view @stop="playback_stop" />
     </q-page-container>
   </q-layout>
 </template>
@@ -34,6 +34,11 @@ export default {
   methods: {
     form_control(cmd) {
       ipcRenderer.send(cmd);
+    },
+    playback_stop() {
+      ipcRenderer.send("playback-stop");
+      this.$router.push("/");
+      this.is_playing = false;
     }
   },
   mounted() {
