@@ -1,5 +1,10 @@
 <template>
-  <q-layout view="hHh Lpr fFf" class="mpv-layout" :class="is_playing ? '' : 'show-bg'">
+  <q-layout
+    view="hHh Lpr fFf"
+    class="mpv-layout"
+    :class="{'show-bg': !is_playing, 'visible': is_visible}"
+    @mousemove.native="check_visible($event)"
+  >
     <!-- nav -->
     <q-bar class="q-electron-drag bg-white mpv-nav">
       <div class="cursor-pointer">File</div>
@@ -28,7 +33,8 @@ export default {
   // name: 'LayoutName',
   data() {
     return {
-      is_playing: false
+      is_playing: false,
+      is_visible: true
     };
   },
   methods: {
@@ -39,6 +45,14 @@ export default {
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
+    },
+    check_visible(e) {
+      // automatically hide when is playing
+      if (!this.is_playing) return;
+
+      if (e.clientY < 100 || e.clientY > window.innerHeight - 100) {
+        this.is_visible = true;
+      } else this.is_visible = false;
     }
   },
   mounted() {
@@ -59,10 +73,15 @@ export default {
   height: 100vh;
   padding-top: 24px;
   transition: all ease 0.5s;
+  opacity: 0;
   border-radius: 10px;
 
   &.show-bg {
     background-color: whitesmoke;
+  }
+
+  &.visible {
+    opacity: 1;
   }
 }
 
