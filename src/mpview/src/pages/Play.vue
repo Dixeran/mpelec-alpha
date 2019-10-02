@@ -24,7 +24,37 @@
 import SeekBar from "components/SeekBar.vue";
 import BottomBar from "components/BottomBar.vue";
 const { remote } = window.require("electron");
+const fs = window.require("fs");
 const IPC = remote.require("./src_electron/IPC_client");
+
+let input_conf = [];
+function handle_key_event(ev) {
+  console.log(ev);
+  let key = ev.key;
+  switch (ev.key) {
+    case "ArrowUp":
+      key = "UP";
+      break;
+    case "ArrowDown":
+      key = "DOWN";
+      break;
+    case "ArrowLeft":
+      key = "LEFT";
+      break;
+    case "ArrowRight":
+      key = "RIGHT";
+      break;
+  }
+
+  let cmd = input_conf.find((item, index) => {
+    return item.key === key;
+  });
+  if (cmd) {
+    console.log(cmd);
+    IPC.send_command(cmd.command, cmd.args);
+    ev.preventDefault();
+  }
+}
 
 export default {
   data() {
@@ -98,6 +128,7 @@ export default {
       IPC.send_command("seek", [pos_sec, "absolute"]);
     },
     stop() {
+      document.removeEventListener("keydown", handle_key_event);
       IPC.send_command("stop");
     },
     set_volume(e) {
@@ -105,10 +136,38 @@ export default {
       let target_bound = e.target.getBoundingClientRect();
       let pos = Math.round(e.clientX - target_bound.left);
       IPC.set_property("volume", [pos]);
+    },
+    bind_keys() {
+      // use input_conf to setup keys binding
+      function register_key_event() {
+        document.addEventListener("keydown", handle_key_event);
+      }
+
+      // parse input.conf
+      fs.readFile("./mpv_config/input.conf", (err, data) => {
+        if (err) {
+          console.error("No input config, use default.");
+          return;
+        }
+
+        let conf_str = data.toString();
+        let lines = conf_str.split(/\r+\n/);
+        lines.forEach(line => {
+          // TODO: upper case & lower case
+          line = line.split(/\s+/);
+          let conf_item = {};
+          conf_item.key = line.shift();
+          conf_item.command = line.shift();
+          conf_item.args = line;
+          input_conf.push(conf_item);
+        });
+        register_key_event();
+      });
     }
   },
   created() {
     this.init();
+    this.bind_keys();
   }
 };
 </script>

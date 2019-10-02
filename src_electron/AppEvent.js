@@ -70,6 +70,7 @@ module.exports = function (addon) {
         mem_bounds = osc.getBounds();
 
       osc.setFullScreen(true);
+      osc.focus();
       shared.forms.window_state = "fullscreen";
       // pwin.setBounds(osc.getBounds());
     }
@@ -84,7 +85,6 @@ module.exports = function (addon) {
       osc
     } = shared.forms;
     setWindowState("fullscreen");
-    osc.webContents.send("fullscreen");
   });
 
   ipcMain.on("minimize", () => {
