@@ -19,8 +19,14 @@
         <q-icon name="volume_up"></q-icon>
       </div>
       <div class="volume-bar" @click="set_volume($event)">
-        <div class="volume-bar-mask" :style="`width: ${playback_detail.volume}px;`"></div>
-        <div class="volume-bar-dot" :style="`left: ${playback_detail.volume}px;`"></div>
+        <div
+          class="volume-bar-mask"
+          :style="`width: ${playback_detail.volume <= 100 ? playback_detail.volume : 100}px;`"
+        ></div>
+        <div
+          class="volume-bar-dot"
+          :style="`left: ${playback_detail.volume <= 100 ? playback_detail.volume : 100}px;`"
+        ></div>
       </div>
     </div>
   </div>
