@@ -73,20 +73,23 @@ export default {
         IPC.on("volume-change", _volume => {
           this.playback_detail.volume = _volume;
         });
+        IPC.on("pause", () => {
+          this.is_playing = false;
+        });
+        IPC.on("unpause", () => {
+          this.is_playing = true;
+        });
         IPC.on("end-file", () => {
           // TODO: play to the end. Stop or play next video.
+          this.$emit("stop");
         });
       });
     },
     pause() {
-      IPC.set_property("pause", [true]).then(() => {
-        this.is_playing = false;
-      });
+      IPC.set_property("pause", [true]);
     },
     restart() {
-      IPC.set_property("pause", [false]).then(() => {
-        this.is_playing = true;
-      });
+      IPC.set_property("pause", [false]);
     },
     seek(e) {
       let target_bound = e.target.getBoundingClientRect();
@@ -95,9 +98,7 @@ export default {
       IPC.send_command("seek", [pos_sec, "absolute"]);
     },
     stop() {
-      IPC.send_command("stop").then(() => {
-        this.$emit("stop");
-      });
+      IPC.send_command("stop");
     },
     set_volume(e) {
       console.log(e);
