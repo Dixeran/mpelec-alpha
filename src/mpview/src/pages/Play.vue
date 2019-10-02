@@ -89,9 +89,7 @@ export default {
       });
     },
     seek(e) {
-      console.log(e);
       let target_bound = e.target.getBoundingClientRect();
-      console.log(target_bound);
       let pos_persent = (e.clientX - target_bound.left) / target_bound.width;
       let pos_sec = pos_persent * this.playback_detail.duration;
       IPC.send_command("seek", [pos_sec, "absolute"]);
