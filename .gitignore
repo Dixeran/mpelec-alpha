@@ -8,3 +8,7 @@ mpv-1.dll
 # test file ignore
 *.mp4
 mpv_config
+
+# build temp
+builder_dist
+builder_build

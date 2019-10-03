@@ -4,6 +4,7 @@ const PSTATE = require("./src_electron/PlayState");
 const WindowConfig = require("./src_electron/WindowConfig");
 require("./src_electron/AppEvent")(addon);
 const IPC = require('./src_electron/IPC_client');
+require('dotenv').config();
 
 global.shared = {
   forms: {
@@ -53,14 +54,27 @@ electron.app.on("ready", function () {
   // bind window movement
   addon.bind_window(hwnd_osc, hwnd_pwin);
 
-  osc.loadURL("http://localhost:8080").then(() => {
-    // prevent black bakcgournd when offscreen
-    let _size = osc.getSize();
-    osc.setSize(_size[0] - 1, _size[1] - 1);
-    _size = osc.getSize();
-    osc.setSize(_size[0] + 1, _size[1] + 1);
-    osc.setBackgroundColor("#00FFFFFF");
-    IPC.init();
-    console.log("ready to play");
-  });
+  if (process.env.NODE_ENV === 'deployment') {
+    osc.loadFile("./src/mpview/dist/spa/index.html").then(() => {
+      // prevent black bakcgournd when offscreen
+      let _size = osc.getSize();
+      osc.setSize(_size[0] - 1, _size[1] - 1);
+      _size = osc.getSize();
+      osc.setSize(_size[0] + 1, _size[1] + 1);
+      osc.setBackgroundColor("#00FFFFFF");
+      IPC.init();
+      console.log("ready to play");
+    });
+  } else {
+    osc.loadURL("http://localhost:8080").then(() => {
+      // prevent black bakcgournd when offscreen
+      let _size = osc.getSize();
+      osc.setSize(_size[0] - 1, _size[1] - 1);
+      _size = osc.getSize();
+      osc.setSize(_size[0] + 1, _size[1] + 1);
+      osc.setBackgroundColor("#00FFFFFF");
+      IPC.init();
+      console.log("ready to play");
+    });
+  }
 })

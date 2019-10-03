@@ -5,20 +5,56 @@
   "main": "index.js",
   "scripts": {
     "test": "echo",
-    "start": "electron ."
+    "start": "electron .",
+    "build:dir": "electron-builder --dir",
+    "build:win": "electron-builder --win"
   },
   "author": "dixeran",
   "license": "GPL-3.0",
   "devDependencies": {
     "electron": "^6.0.10",
+    "electron-builder": "^21.2.0",
     "node-addon-api": "^1.7.1"
   },
   "dependencies": {
-    "bindings": "^1.5.0"
+    "bindings": "^1.5.0",
+    "dotenv": "^8.1.0"
   },
   "cmake-js": {
     "runtime": "electron",
     "runtimeVersion": "6.0.10",
     "arch": "x64"
+  },
+  "build": {
+    "productName": "Mpelec Alpha",
+    "appId": "com.128bit.mpelec",
+    "copyright": "Copyright © 2018 Dixeran",
+    "directories": {
+      "buildResources": "builder_build",
+      "output": "builder_dist"
+    },
+    "files": [
+      "*",
+      "build/Release/**/*",
+      "src_electron/**/*",
+      "node_modules/**/*",
+      "src/mpview/dist/spa/**/*",
+      "mpv_config/**/*",
+      "!**/*.mp4"
+    ],
+    "extraFiles": [
+      "mpv-1.dll",
+      "mpv_config/**/*",
+      {
+        "from": "deploy.env",
+        "to": ".env"
+      }
+    ],
+    "win": {
+      "icon": "builder_build/icon.ico",
+      "asar": true,
+      "compression": "maximum",
+      "target": "7z"
+    }
   }
 }
