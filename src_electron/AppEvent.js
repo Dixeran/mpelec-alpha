@@ -66,13 +66,12 @@ module.exports = function (addon) {
     } else if (state === "fullscreen") {
       console.log("fullscreen");
       // store current bounds
-      if (old_state !== 'fullscreen')
+      if (old_state !== 'fullscreen') {
         mem_bounds = osc.getBounds();
-
-      osc.setFullScreen(true);
-      osc.focus();
-      shared.forms.window_state = "fullscreen";
-      // pwin.setBounds(osc.getBounds());
+        osc.setFullScreen(true);
+        osc.focus();
+        shared.forms.window_state = "fullscreen";
+      } else setWindowState('normal');
     }
   }
 
@@ -107,6 +106,7 @@ module.exports = function (addon) {
     // TODO: fit video size.
     pwin.restore();
     aux.hide();
+    osc.focus();
   });
 
   ipcMain.on("playback-stop", () => {

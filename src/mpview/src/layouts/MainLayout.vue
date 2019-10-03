@@ -2,11 +2,11 @@
   <q-layout
     view="hHh Lpr fFf"
     class="mpv-layout"
-    :class="{'show-bg': !is_playing, 'visible': is_visible}"
+    :class="{'show-bg': !is_playing}"
     @mousemove.native="check_visible($event)"
   >
     <!-- nav -->
-    <q-bar class="q-electron-drag bg-white mpv-nav">
+    <q-bar class="q-electron-drag bg-white mpv-nav" :class="{'visible': is_visible}">
       <div class="cursor-pointer">File</div>
       <div class="cursor-pointer">Edit</div>
       <div class="cursor-pointer gt-xs">View</div>
@@ -21,7 +21,7 @@
 
     <q-page-container>
       <!-- This is where pages get injected -->
-      <router-view @stop="playback_stop" />
+      <router-view @fullscreen="form_control('fullscreen')" @stop="playback_stop" />
     </q-page-container>
   </q-layout>
 </template>
@@ -45,12 +45,13 @@ export default {
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
+      this.is_visible = true;
     },
     check_visible(e) {
       // automatically hide when is playing
       if (!this.is_playing) return;
 
-      if (e.clientY < 100 || e.clientY > window.innerHeight - 100) {
+      if (e.clientY < 100) {
         this.is_visible = true;
       } else this.is_visible = false;
     }
@@ -73,15 +74,10 @@ export default {
   height: 100vh;
   padding-top: 24px;
   transition: all ease 0.5s;
-  opacity: 0;
   border-radius: 10px;
 
   &.show-bg {
     background-color: whitesmoke;
-  }
-
-  &.visible {
-    opacity: 1;
   }
 }
 
@@ -89,5 +85,11 @@ export default {
   box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
   margin: 0 24px;
   border-radius: 65535px;
+  transition: all ease 0.3s;
+  opacity: 0;
+
+  &.visible {
+    opacity: 1;
+  }
 }
 </style>

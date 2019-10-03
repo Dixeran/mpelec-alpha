@@ -1,11 +1,15 @@
 <template>
-  <q-page padding>
+  <q-page padding @mousemove.native="check_visible($event)">
     <!-- mouse event area -->
-    <div class="event-area" @click="mouse_event($event)" @dblclick="mouse_event($event)"></div>
+    <div
+      class="event-area"
+      @click="mouse_event($event, 'click')"
+      @dblclick="mouse_event($event, 'dblclick')"
+    ></div>
 
     <!-- control panel -->
     <div class="row justify-center control-wraper">
-      <div class="control-panel" :class="loaded ? '' : 'hide'">
+      <div class="control-panel" :class="{hide: !loaded || !is_visible}">
         <!-- seek bar -->
         <SeekBar :playback_detail="playback_detail" @seek="seek" />
 
@@ -36,6 +40,7 @@ export default {
   data() {
     return {
       loaded: false,
+      is_visible: true,
       is_playing: true,
       playback_detail: {
         title: undefined,
@@ -95,6 +100,11 @@ export default {
         });
       });
     },
+    check_visible(ev) {
+      if (ev.clientY > window.innerHeight - 100) {
+        this.is_visible = true;
+      } else this.is_visible = false;
+    },
     annoy() {},
     pause() {
       IPC.set_property("pause", [true]);
@@ -110,6 +120,7 @@ export default {
     },
     stop() {
       document.removeEventListener("keydown", this.handle_key_event);
+      window.removeEventListener("wheel", this.wheel_event);
       IPC.send_command("stop");
     },
     set_volume(e) {
@@ -150,6 +161,8 @@ export default {
     handle_key_event(ev) {
       console.log(ev);
       let key = ev.key;
+
+      // map keys
       switch (ev.key) {
         case "ArrowUp":
           key = "UP";
@@ -163,6 +176,24 @@ export default {
         case "ArrowRight":
           key = "RIGHT";
           break;
+        case " ":
+          key = "SPACE";
+          break;
+        case "Enter":
+          key = "ENTER";
+          break;
+        case "Escape":
+          key = "ESC";
+          break;
+      }
+
+      switch (key) {
+        case "ENTER":
+          this.$emit("fullscreen");
+          break;
+        case "ESC":
+          this.$emit("stop");
+          break;
       }
 
       let cmd = input_conf.find((item, index) => {
@@ -174,7 +205,54 @@ export default {
         ev.preventDefault();
       }
     },
-    mouse_event(ev) {},
+    mouse_event(ev, type) {
+      console.log(ev);
+      let key = "";
+      if (type === "click") {
+        let btn_code = ev.button;
+
+        switch (btn_code) {
+          case 0:
+            console.log("Left button clicked.");
+            key = "MBTN_LEFT";
+            break;
+
+          case 1:
+            console.log("Middle button clicked.");
+            break;
+
+          case 2:
+            console.log("Right button clicked.");
+            key = "MBTN_RIGHT";
+            break;
+
+          case 3:
+            key = "MBTN_BACK";
+            ev.preventDefault();
+            break;
+
+          case 4:
+            key = "MBTN_NEXT";
+            ev.preventDefault();
+            break;
+
+          default:
+            console.log("Unexpected code: " + btn_code);
+            return;
+        }
+      } else if (type === "dblclick") {
+        this.$emit("fullscreen");
+      } else return;
+
+      let cmd = input_conf.find((item, index) => {
+        return item.key === key;
+      });
+      if (cmd) {
+        console.log(cmd);
+        IPC.send_command(cmd.command, cmd.args);
+        ev.preventDefault();
+      }
+    },
     wheel_event(ev) {
       console.log(ev);
       let key = "";
@@ -214,7 +292,7 @@ export default {
   bottom: 100px;
   left: 0;
   right: 0;
-  z-index: -1;
+  z-index: 5;
   opacity: 0;
 }
 
