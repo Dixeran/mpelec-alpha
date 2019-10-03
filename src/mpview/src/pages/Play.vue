@@ -1,5 +1,8 @@
 <template>
   <q-page padding>
+    <!-- mouse event area -->
+    <div class="event-area" @click="mouse_event($event)" @dblclick="mouse_event($event)"></div>
+
     <!-- control panel -->
     <div class="row justify-center control-wraper">
       <div class="control-panel" :class="loaded ? '' : 'hide'">
@@ -28,33 +31,6 @@ const fs = window.require("fs");
 const IPC = remote.require("./src_electron/IPC_client");
 
 let input_conf = [];
-function handle_key_event(ev) {
-  console.log(ev);
-  let key = ev.key;
-  switch (ev.key) {
-    case "ArrowUp":
-      key = "UP";
-      break;
-    case "ArrowDown":
-      key = "DOWN";
-      break;
-    case "ArrowLeft":
-      key = "LEFT";
-      break;
-    case "ArrowRight":
-      key = "RIGHT";
-      break;
-  }
-
-  let cmd = input_conf.find((item, index) => {
-    return item.key === key;
-  });
-  if (cmd) {
-    console.log(cmd);
-    IPC.send_command(cmd.command, cmd.args);
-    ev.preventDefault();
-  }
-}
 
 export default {
   data() {
@@ -70,6 +46,10 @@ export default {
           width: undefined,
           height: undefined
         }
+      },
+      tip: {
+        content: "",
+        show: 0
       }
     };
   },
@@ -94,7 +74,7 @@ export default {
         IPC.observe_property("time-pos");
         IPC.on("time-pos-change", _time_pos => {
           // throttle
-          _time_pos = _time_pos.toFixed(0);
+          _time_pos = Math.round(_time_pos);
           if (_time_pos !== this.playback_detail.time_pos) {
             this.playback_detail.time_pos = _time_pos;
           }
@@ -115,6 +95,7 @@ export default {
         });
       });
     },
+    annoy() {},
     pause() {
       IPC.set_property("pause", [true]);
     },
@@ -128,7 +109,7 @@ export default {
       IPC.send_command("seek", [pos_sec, "absolute"]);
     },
     stop() {
-      document.removeEventListener("keydown", handle_key_event);
+      document.removeEventListener("keydown", this.handle_key_event);
       IPC.send_command("stop");
     },
     set_volume(e) {
@@ -138,9 +119,11 @@ export default {
       IPC.set_property("volume", [pos]);
     },
     bind_keys() {
+      let that = this;
       // use input_conf to setup keys binding
-      function register_key_event() {
-        document.addEventListener("keydown", handle_key_event);
+      function register_input_event() {
+        document.addEventListener("keydown", that.handle_key_event);
+        window.addEventListener("wheel", that.wheel_event);
       }
 
       // parse input.conf
@@ -161,8 +144,59 @@ export default {
           conf_item.args = line;
           input_conf.push(conf_item);
         });
-        register_key_event();
+        register_input_event();
       });
+    },
+    handle_key_event(ev) {
+      console.log(ev);
+      let key = ev.key;
+      switch (ev.key) {
+        case "ArrowUp":
+          key = "UP";
+          break;
+        case "ArrowDown":
+          key = "DOWN";
+          break;
+        case "ArrowLeft":
+          key = "LEFT";
+          break;
+        case "ArrowRight":
+          key = "RIGHT";
+          break;
+      }
+
+      let cmd = input_conf.find((item, index) => {
+        return item.key === key;
+      });
+      if (cmd) {
+        console.log(cmd);
+        IPC.send_command(cmd.command, cmd.args);
+        ev.preventDefault();
+      }
+    },
+    mouse_event(ev) {},
+    wheel_event(ev) {
+      console.log(ev);
+      let key = "";
+      if (ev.deltaX === 0) {
+        // whell down or up
+        if (ev.deltaY > 0) key = "WHEEL_DOWN";
+        else if (ev.deltaY < 0) key = "WHEEL_UP";
+        else return;
+      } else {
+        // whell left or right
+        if (ev.deltaX > 0) key = "WHEEL_RIGHT";
+        else if (ev.deltaX < 0) key = "WHEEL_LEFT";
+        else return;
+      }
+
+      let cmd = input_conf.find((item, index) => {
+        return item.key === key;
+      });
+      if (cmd) {
+        console.log(cmd);
+        IPC.send_command(cmd.command, cmd.args);
+      }
     }
   },
   created() {
@@ -173,6 +207,18 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
+// event area
+.event-area {
+  position: fixed;
+  top: 100px;
+  bottom: 100px;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  opacity: 0;
+}
+
+// control panel
 .control-wraper {
   position: fixed;
   bottom: 0;
