@@ -1,8 +1,8 @@
 {
   "name": "mpview",
   "version": "0.0.1",
-  "description": "A Quasar Framework app",
-  "productName": "Quasar App",
+  "description": "Player for human use",
+  "productName": "Mpelec Alpha",
   "cordovaId": "org.cordova.quasar.app",
   "author": "dixeran <dixeran@outlook.com>",
   "private": true,
