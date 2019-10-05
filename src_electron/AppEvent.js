@@ -45,6 +45,7 @@ module.exports = function (addon) {
         shared.forms.window_state = "maximized";
       } else {
         osc.maximize();
+        osc.focus();
         // pwin.setBounds(osc.getBounds());
       }
       shared.forms.window_state = "maximized";
@@ -61,6 +62,7 @@ module.exports = function (addon) {
     } else if (state === "normal") {
       console.log("normal");
       osc.setBounds(mem_bounds);
+      osc.focus();
       // pwin.setBounds(osc.getBounds());
       shared.forms.window_state = "normal";
     } else if (state === "fullscreen") {

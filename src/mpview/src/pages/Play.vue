@@ -84,6 +84,9 @@ export default {
         IPC.get_property("duration").then(dur => {
           this.playback_detail.duration = dur;
         });
+        IPC.get_property("pause").then(is_pause => {
+          if (is_pause) this.is_playing = false;
+        });
         IPC.observe_property("time-pos");
         IPC.on("time-pos-change", _time_pos => {
           // throttle
