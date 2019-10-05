@@ -1,10 +1,13 @@
 const electron = require("electron");
+const path = require('path');
 const addon = require("bindings")("addon");
 const PSTATE = require("./src_electron/PlayState");
 const WindowConfig = require("./src_electron/WindowConfig");
 require("./src_electron/AppEvent")(addon);
 const IPC = require('./src_electron/IPC_client');
-require('dotenv').config();
+require('dotenv').config({
+  path: path.resolve(__dirname, '.env')
+});
 
 global.shared = {
   forms: {
@@ -55,26 +58,36 @@ electron.app.on("ready", function () {
   addon.bind_window(hwnd_osc, hwnd_pwin);
 
   if (process.env.NODE_ENV === 'deployment') {
-    osc.loadFile("./src/mpview/dist/spa/index.html").then(() => {
-      // prevent black bakcgournd when offscreen
-      let _size = osc.getSize();
-      osc.setSize(_size[0] - 1, _size[1] - 1);
-      _size = osc.getSize();
-      osc.setSize(_size[0] + 1, _size[1] + 1);
-      osc.setBackgroundColor("#00FFFFFF");
-      IPC.init();
-      console.log("ready to play");
-    });
+    osc.loadFile(__dirname + "/src/mpview/dist/spa/index.html").then(loaded);
   } else {
-    osc.loadURL("http://localhost:8080").then(() => {
-      // prevent black bakcgournd when offscreen
-      let _size = osc.getSize();
-      osc.setSize(_size[0] - 1, _size[1] - 1);
-      _size = osc.getSize();
-      osc.setSize(_size[0] + 1, _size[1] + 1);
-      osc.setBackgroundColor("#00FFFFFF");
-      IPC.init();
-      console.log("ready to play");
-    });
+    osc.loadURL("http://localhost:8080").then(loaded);
+  }
+
+  function loaded() {
+    // prevent black bakcgournd when offscreen
+    let _size = osc.getSize();
+    osc.setSize(_size[0] - 1, _size[1] - 1);
+    _size = osc.getSize();
+    osc.setSize(_size[0] + 1, _size[1] + 1);
+    osc.setBackgroundColor("#00FFFFFF");
+    IPC.init();
+    console.log("ready to play");
+
+    // use argv to open file
+    let args;
+    if (process.defaultApp) args = process.argv.slice(2); // when dev
+    else args = process.argv.slice(1);
+
+    file = args[0];
+    if (file) {
+      addon.play(file);
+      osc.webContents.send("playback-start");
+      shared.play_state = PSTATE.PLAY;
+      // TODO: fit video size.
+      win.restore();
+      _aux.hide();
+      osc.focus();
+      // TODO: add rest files to playlist.
+    }
   }
 })
