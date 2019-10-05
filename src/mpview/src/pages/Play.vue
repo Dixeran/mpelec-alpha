@@ -2,10 +2,14 @@
   <q-page padding @mousemove.native="check_visible($event)">
     <!-- mouse event area -->
     <div
-      class="event-area"
+      class="event-area row justify-center items-center"
       @click="mouse_event($event, 'click')"
       @dblclick="mouse_event($event, 'dblclick')"
-    ></div>
+    >
+      <div class="pause-indicator" v-if="!is_playing">
+        <q-icon name="pause"></q-icon>
+      </div>
+    </div>
 
     <!-- control panel -->
     <div class="row justify-center control-wraper">
@@ -23,6 +27,9 @@
           @set_volume="set_volume"
         />
       </div>
+
+      <!-- annoying tips -->
+      <div class="annoy" v-if="tip.show">{{tip.content}}</div>
     </div>
   </q-page>
 </template>
@@ -54,7 +61,8 @@ export default {
       },
       tip: {
         content: "",
-        show: 0
+        show: false,
+        tick: undefined
       }
     };
   },
@@ -87,6 +95,7 @@ export default {
         IPC.observe_property("volume");
         IPC.on("volume-change", _volume => {
           this.playback_detail.volume = _volume;
+          this.annoy("Set volume: " + _volume + "%");
         });
         IPC.on("pause", () => {
           this.is_playing = false;
@@ -105,7 +114,19 @@ export default {
         this.is_visible = true;
       } else this.is_visible = false;
     },
-    annoy() {},
+    annoy(msg) {
+      if (this.tip.tick) {
+        this.tip.show = false;
+        clearTimeout(this.tip.tick);
+      }
+
+      this.tip.content = msg;
+      this.tip.show = true;
+      let that = this;
+      this.tip.tick = setTimeout(function() {
+        that.tip.show = false;
+      }, 3000);
+    },
     pause() {
       IPC.set_property("pause", [true]);
     },
@@ -192,7 +213,7 @@ export default {
           this.$emit("fullscreen");
           break;
         case "ESC":
-          this.$emit("stop");
+          this.stop();
           break;
       }
 
@@ -293,12 +314,25 @@ export default {
   left: 0;
   right: 0;
   z-index: 5;
-  opacity: 0;
+
+  & > .pause-indicator {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 8px;
+    background-color: $primary;
+    color: white;
+    font-size: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
+  }
 }
 
 // control panel
 .control-wraper {
   position: fixed;
+  left: 0;
   bottom: 0;
   width: 100vw;
 }
@@ -320,5 +354,18 @@ export default {
 .hide {
   opacity: 0;
   pointer-events: none;
+}
+
+// annoying tip
+.annoy {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  padding: 5px;
+  border-radius: 5px 0 0 0;
+  font-size: 10px;
+  background: $blue-grey-8;
+  color: white;
+  -webkit-user-select: none;
 }
 </style>

@@ -58,6 +58,7 @@ export default {
 <style lang="stylus" scoped>
 .drop-area {
   position: relative;
+  width: 100%;
   -webkit-user-select: none;
   transition: all ease 0.5s;
 
