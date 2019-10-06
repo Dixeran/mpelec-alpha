@@ -21,13 +21,14 @@
         text-color="primary"
         size="lg"
         label="OPEN FILE"
+        @click="open_file"
       />
     </div>
   </q-page>
 </template>
 
 <script>
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer, remote } = window.require("electron");
 export default {
   data() {
     return {
@@ -50,6 +51,23 @@ export default {
         size: file.size,
         type: file.type
       });
+    },
+    open_file() {
+      remote.dialog
+        .showOpenDialog(null, {
+          properties: ["openFile", "multiSelections"]
+        })
+        .then(result => {
+          if (!result.canceled) {
+            console.log(result.filePaths);
+            ipcRenderer.send("open-file", {
+              path: result.filePaths[0]
+            });
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
     }
   }
 };
