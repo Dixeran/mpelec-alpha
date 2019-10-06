@@ -3,12 +3,16 @@
     <!-- mouse event area -->
     <div
       class="event-area row justify-center items-center"
+      ref="event_area"
       @click="mouse_event($event, 'click')"
       @dblclick="mouse_event($event, 'dblclick')"
     >
       <div class="pause-indicator" v-if="!is_playing">
         <q-icon name="pause"></q-icon>
       </div>
+
+      <!-- context menu -->
+      <CtxMenu v-model="ctx_show" :tracks="metadata.tracks" @set_track="set_track" />
     </div>
 
     <!-- control panel -->
@@ -37,6 +41,7 @@
 <script>
 import SeekBar from "components/SeekBar.vue";
 import BottomBar from "components/BottomBar.vue";
+import CtxMenu from "components/CtxMenu.vue";
 const { remote } = window.require("electron");
 const fs = window.require("fs");
 const path = window.require("path");
@@ -54,6 +59,7 @@ export default {
       loaded: false,
       is_visible: true,
       is_playing: true,
+      ctx_show: false,
       playback_detail: {
         title: undefined,
         volume: undefined,
@@ -62,6 +68,13 @@ export default {
         size: {
           width: undefined,
           height: undefined
+        }
+      },
+      metadata: {
+        tracks: {
+          video: [],
+          audio: [],
+          sub: []
         }
       },
       tip: {
@@ -73,7 +86,8 @@ export default {
   },
   components: {
     SeekBar,
-    BottomBar
+    BottomBar,
+    CtxMenu
   },
   methods: {
     init() {
@@ -92,6 +106,7 @@ export default {
         IPC.get_property("pause").then(is_pause => {
           if (is_pause) this.is_playing = false;
         });
+
         IPC.observe_property("time-pos");
         IPC.on("time-pos-change", _time_pos => {
           // throttle
@@ -114,6 +129,13 @@ export default {
         IPC.on("end-file", () => {
           // TODO: play to the end. Stop or play next video.
           this.$emit("stop");
+        });
+
+        IPC.get_property("track-list").then(tracks => {
+          console.log(tracks);
+          tracks.forEach(tr => {
+            this.metadata.tracks[tr.type].push(tr);
+          });
         });
       });
     },
@@ -239,6 +261,9 @@ export default {
     },
     mouse_event(ev, type) {
       console.log(ev);
+      // ignore event that hide ctx menu
+      if (this.ctx_show) return;
+
       let key = "";
       if (type === "click") {
         let btn_code = ev.button;
@@ -287,6 +312,7 @@ export default {
     },
     wheel_event(ev) {
       console.log(ev);
+      if (ev.target !== this.$refs.event_area) return;
       let key = "";
       if (ev.deltaX === 0) {
         // whell down or up
@@ -307,12 +333,22 @@ export default {
         console.log(cmd);
         IPC.send_command(cmd.command, cmd.args);
       }
+    },
+    set_track(track) {
+      let prop = track.type.substr(0, 1) + "id"; // video-id = vid, so on
+      IPC.set_property(prop, [track.id]).then(() => {
+        this.metadata.tracks[track.type].forEach(tr => {
+          if (tr.id === track.id) tr.selected = true;
+          else if (tr.selected) tr.selected = false;
+        });
+
+        this.annoy(`Set ${track.type} track: ${track.title || track.codec}`);
+      });
     }
   },
   created() {
     this.init();
     this.bind_keys();
-    console.log(__dirname);
   }
 };
 </script>
