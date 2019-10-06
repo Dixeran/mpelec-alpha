@@ -5,9 +5,12 @@ const PSTATE = require("./src_electron/PlayState");
 const WindowConfig = require("./src_electron/WindowConfig");
 require("./src_electron/AppEvent")(addon);
 const IPC = require('./src_electron/IPC_client');
-require('dotenv').config({
-  path: path.resolve(__dirname, '.env')
-});
+if (!process.defaultApp) {
+  // after build
+  require('dotenv').config({
+    path: path.resolve(__dirname, '.env')
+  });
+}
 
 global.shared = {
   forms: {
@@ -17,7 +20,8 @@ global.shared = {
     window_state: 'normal' // normal, maximized, minimized, fullscreen
   },
   play_state: PSTATE.NONE,
-  play_detail: null
+  play_detail: null,
+  __dirname: __dirname
 }
 
 // Disable hw to fix transparent issue
@@ -45,7 +49,7 @@ electron.app.on("ready", function () {
   });
   shared.forms.pwin = win;
   let hwnd_pwin = win.getNativeWindowHandle().readInt32LE();
-  addon.init(hwnd_pwin);
+  addon.init(hwnd_pwin, __dirname);
 
   // create main window
   let osc = new electron.BrowserWindow({
@@ -70,6 +74,8 @@ electron.app.on("ready", function () {
     _size = osc.getSize();
     osc.setSize(_size[0] + 1, _size[1] + 1);
     osc.setBackgroundColor("#00FFFFFF");
+    console.log('path:');
+    console.log(addon.get_path());
     IPC.init();
     console.log("ready to play");
 

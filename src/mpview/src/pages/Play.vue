@@ -39,9 +39,14 @@ import SeekBar from "components/SeekBar.vue";
 import BottomBar from "components/BottomBar.vue";
 const { remote } = window.require("electron");
 const fs = window.require("fs");
+const path = window.require("path");
 const IPC = remote.require("./src_electron/IPC_client");
 
 let input_conf = [];
+// FUCK!! getAppPath = process.cwd().
+// let __dirname = remote.app.getAppPath();
+// use path.resolve(__dirname, {relative path}) instead.
+const __dirname = remote.getGlobal("shared").__dirname;
 
 export default {
   data() {
@@ -162,25 +167,28 @@ export default {
       }
 
       // parse input.conf
-      fs.readFile("./mpv_config/input.conf", (err, data) => {
-        if (err) {
-          console.error("No input config, use default.");
-          return;
-        }
+      fs.readFile(
+        path.resolve(__dirname, "./mpv_config/input.conf"),
+        (err, data) => {
+          if (err) {
+            console.error("No input config, use default.");
+            return;
+          }
 
-        let conf_str = data.toString();
-        let lines = conf_str.split(/\r+\n/);
-        lines.forEach(line => {
-          // TODO: upper case & lower case
-          line = line.split(/\s+/);
-          let conf_item = {};
-          conf_item.key = line.shift();
-          conf_item.command = line.shift();
-          conf_item.args = line;
-          input_conf.push(conf_item);
-        });
-        register_input_event();
-      });
+          let conf_str = data.toString();
+          let lines = conf_str.split(/\r+\n/);
+          lines.forEach(line => {
+            // TODO: upper case & lower case
+            line = line.split(/\s+/);
+            let conf_item = {};
+            conf_item.key = line.shift();
+            conf_item.command = line.shift();
+            conf_item.args = line;
+            input_conf.push(conf_item);
+          });
+          register_input_event();
+        }
+      );
     },
     handle_key_event(ev) {
       console.log(ev);
@@ -304,6 +312,7 @@ export default {
   created() {
     this.init();
     this.bind_keys();
+    console.log(__dirname);
   }
 };
 </script>

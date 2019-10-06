@@ -1,11 +1,13 @@
 #include <napi.h>
 #include <Windows.h>
+#include <string>
 #include "include/client.h"
 
 // life time with NodeJS main thread.(?)
 mpv_handle *ctx = nullptr;
 HWND osc = NULL, pwin = NULL;
 WNDPROC old_proc = NULL;
+std::string conf_path;
 
 LRESULT CALLBACK _HookWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -27,7 +29,7 @@ LRESULT CALLBACK _HookWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 Napi::ArrayBuffer InitMpv(const Napi::CallbackInfo &info)
 {
     Napi::Env env = info.Env();
-    if (info.Length() < 1)
+    if (info.Length() < 2)
     {
         Napi::TypeError::New(env, "Need arg:wid to init mpv.").ThrowAsJavaScriptException();
         return Napi::ArrayBuffer::New(env, 0);
@@ -35,7 +37,10 @@ Napi::ArrayBuffer InitMpv(const Napi::CallbackInfo &info)
     int64_t wid = info[0].As<Napi::Number>().Int32Value();
     ctx = mpv_create();
     mpv_set_property(ctx, "wid", MPV_FORMAT_INT64, &wid);
-    mpv_set_option_string(ctx, "config-dir", "./mpv_config");
+    Napi::String js_path = info[1].As<Napi::String>();
+    conf_path = js_path.Utf8Value();
+    conf_path += "\\mpv_config";
+    mpv_set_option_string(ctx, "config-dir", conf_path.c_str());
     mpv_set_option_string(ctx, "config", "yes");
     mpv_initialize(ctx);
     Napi::ArrayBuffer js_ctx = Napi::ArrayBuffer::New(env, &ctx, 8);
@@ -74,11 +79,19 @@ Napi::Value BindMove(const Napi::CallbackInfo &info)
     return env.Null();
 }
 
+Napi::String GetConfPath(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+    Napi::String js_path = Napi::String::New(env, conf_path);
+    return js_path;
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "init"), Napi::Function::New(env, InitMpv));
     exports.Set(Napi::String::New(env, "bind_window"), Napi::Function::New(env, BindMove));
     exports.Set(Napi::String::New(env, "play"), Napi::Function::New(env, Play));
+    exports.Set(Napi::String::New(env, "get_path"), Napi::Function::New(env, GetConfPath));
     return exports;
 }
 

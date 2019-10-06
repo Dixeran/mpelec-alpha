@@ -4,8 +4,9 @@
   "description": "Player for human use",
   "main": "index.js",
   "scripts": {
-    "test": "echo",
+    "test": "electron . test.mp4",
     "start": "electron .",
+    "build:native": "cmake-js rebuild && @powershell cp mpv-1.dll build/Release/mpv-1.dll",
     "build:dir": "electron-builder --dir",
     "build:win": "electron-builder --win"
   },
@@ -40,21 +41,14 @@
       "node_modules/**/*",
       "src/mpview/dist/spa/**/*",
       "mpv_config/**/*",
-      "!**/*.mp4"
-    ],
-    "extraFiles": [
-      "mpv-1.dll",
-      "mpv_config/**/*",
-      {
-        "from": "deploy.env",
-        "to": ".env"
-      }
+      "!**/*.mp4",
+      "!mpv-1.dll"
     ],
     "win": {
       "icon": "builder_build/icon.ico",
-      "asar": true,
+      "asar": false,
       "compression": "maximum",
-      "target": "7z"
+      "target": "dir"
     }
   }
 }
