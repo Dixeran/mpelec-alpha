@@ -26,7 +26,7 @@ UI kit: Quasar, Framework: Vue, Electron.
 
 I can't see how to implement a frameless window with a drag area in WebEngine.
 
-**Why not Qt Native or any other thing we use to development native apps?**
+**Why not Qt Native or any other thing we use to develop native apps?**
 
 I'd like to use Web based UI.
 
