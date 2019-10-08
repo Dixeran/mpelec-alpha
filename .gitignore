@@ -1,6 +1,9 @@
 # node ignore
 node_modules
 
+.vscode
+.idea
+
 # Native addon ignore
 build
 mpv-1.dll

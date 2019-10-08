@@ -2,11 +2,14 @@
   <q-layout
     view="hHh Lpr fFf"
     class="mpv-layout"
-    :class="{'show-bg': !is_playing}"
+    :class="{ 'show-bg': !is_playing }"
     @mousemove.native="check_visible($event)"
   >
     <!-- nav -->
-    <q-bar class="q-electron-drag bg-white mpv-nav" :class="{'visible': is_visible}">
+    <q-bar
+      class="q-electron-drag bg-white mpv-nav"
+      :class="{ visible: is_visible }"
+    >
       <q-icon name="img:statics/icon.png"></q-icon>
       <div class="text-weight-bold">Mpelec Alpha</div>
       <div class="cursor-pointer q-electron-drag--exception">
@@ -27,7 +30,12 @@
     </q-bar>
 
     <!-- about dialog -->
-    <q-dialog v-model="show_about" seamless transition-show="flip-down" transition-hide="flip-up">
+    <q-dialog
+      v-model="show_about"
+      seamless
+      transition-show="flip-down"
+      transition-hide="flip-up"
+    >
       <q-card class="bg-primary text-white">
         <q-bar>
           <q-space />
@@ -42,11 +50,19 @@
         </q-card-section>
 
         <q-card-section>
-          <p>MPV player with GUI based on Electron. For more detail, please visit Github repo - https://github.com/Dixeran/mpelec-alpha</p>
+          <p>
+            MPV player with GUI based on Electron. For more detail, please visit
+            Github repo - https://github.com/Dixeran/mpelec-alpha
+          </p>
           <div>
             Icons made by
-            <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from
-            <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
+            <a href="https://www.flaticon.com/authors/freepik" title="Freepik">
+              Freepik
+            </a>
+            from
+            <a href="https://www.flaticon.com/" title="Flaticon">
+              www.flaticon.com
+            </a>
           </div>
         </q-card-section>
       </q-card>
@@ -54,7 +70,10 @@
 
     <q-page-container>
       <!-- This is where pages get injected -->
-      <router-view @fullscreen="form_control('fullscreen')" @stop="playback_stop" />
+      <router-view
+        @fullscreen="form_control('fullscreen')"
+        @stop="playback_stop"
+      />
     </q-page-container>
   </q-layout>
 </template>
@@ -85,9 +104,7 @@ export default {
       // automatically hide when is playing
       if (!this.is_playing) return;
 
-      if (e.clientY < 100) {
-        this.is_visible = true;
-      } else this.is_visible = false;
+      this.is_visible = e.clientY < 100;
     }
   },
   mounted() {
@@ -116,7 +133,7 @@ export default {
 }
 
 .mpv-nav {
-  box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.2);
   margin: 0 24px;
   border-radius: 65535px;
   transition: all ease 0.3s;
