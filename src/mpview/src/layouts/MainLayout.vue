@@ -29,6 +29,23 @@
       <q-btn dense flat icon="close" @click="form_control('close')" />
     </q-bar>
 
+    <!-- playlist -->
+    <q-drawer v-model="drawer" overlay bordered side="right" behavior="desktop">
+      <PlayList />
+      <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
+        <q-btn
+          v-if="drawer"
+          dense
+          round
+          push
+          unelevated
+          color="primary"
+          icon="chevron_right"
+          @click="drawer = false"
+        />
+      </div>
+    </q-drawer>
+
     <!-- about dialog -->
     <q-dialog
       v-model="show_about"
@@ -73,6 +90,7 @@
       <router-view
         @fullscreen="form_control('fullscreen')"
         @stop="playback_stop"
+        @show_list="drawer = true"
       />
     </q-page-container>
   </q-layout>
@@ -80,14 +98,18 @@
 
 <script>
 const { ipcRenderer, remote } = window.require("electron");
-const IPC = remote.require("./src_electron/IPC_client");
+import PlayList from "components/PlayList.vue";
+
 export default {
-  // name: 'LayoutName',
+  components: {
+    PlayList
+  },
   data() {
     return {
       is_playing: false,
       is_visible: true,
-      show_about: false
+      show_about: false,
+      drawer: false
     };
   },
   methods: {

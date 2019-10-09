@@ -39,6 +39,15 @@
 
       <!-- annoying tips -->
       <div class="annoy" v-if="tip.show">{{ tip.content }}</div>
+
+      <!-- activate playlist -->
+      <div
+        class="playlist-toggle"
+        :class="{ hide: !loaded || !is_visible }"
+        @click="$emit('show_list')"
+      >
+        <q-icon name="list"></q-icon>
+      </div>
     </div>
   </q-page>
 </template>
@@ -57,6 +66,7 @@ let input_conf = [];
 // let __dirname = remote.app.getAppPath();
 // use path.resolve(__dirname, {relative path}) instead.
 const __dirname = remote.getGlobal("shared").__dirname;
+let DBus = remote.require("./src_electron/DBus");
 
 export default {
   data() {
@@ -357,6 +367,8 @@ export default {
   created() {
     this.init();
     this.bind_keys();
+    console.log(DBus.name);
+    DBus.name = "omg";
   }
 };
 </script>
@@ -423,5 +435,33 @@ export default {
   background: $blue-grey-8;
   color: white;
   -webkit-user-select: none;
+}
+
+//  toggle playlist
+.playlist-toggle{
+  position absolute;
+  right 0;
+  top 2rem;
+  width 24px;
+  height 2.5rem;
+  transform translateY(-50%);
+  color whitesmoke
+  background $blue-grey;
+  margin-top: 24px;
+  border-radius: 10px 0 0 10px;
+  box-shadow: 0 7px 20px 0 rgba(0,0,0,0.2);
+  cursor: pointer;
+
+  text-align center;
+  display flex;
+  align-items center;
+  justify-content center;
+
+  transition all ease 0.2s;
+
+  &:hover{
+    height 4rem;
+    width 26px;
+  }
 }
 </style>

@@ -20,7 +20,12 @@ global.shared = {
     window_state: 'normal' // normal, maximized, minimized, fullscreen
   },
   play_state: PSTATE.NONE,
-  play_detail: null,
+  play_detail: {
+    path: undefined,
+    filename: undefined,
+    temp_path: undefined,
+    hash_tag: undefined, // calculate from path-filename
+  },
   __dirname: __dirname
 }
 
