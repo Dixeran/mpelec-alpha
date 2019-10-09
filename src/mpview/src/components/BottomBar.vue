@@ -5,6 +5,7 @@
         <q-btn size="sm" icon="play_arrow" v-if="!is_playing" @click="restart"></q-btn>
         <q-btn size="sm" icon="pause" v-else @click="pause"></q-btn>
         <q-btn size="sm" icon="stop" @click="stop"></q-btn>
+        <q-btn size="sm" icon="camera" @click="$emit('request_thumbs')"></q-btn>
       </q-btn-group>
     </div>
     <div class="bottom-list-control">

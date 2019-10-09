@@ -12,12 +12,16 @@
       </div>
 
       <!-- context menu -->
-      <CtxMenu v-model="ctx_show" :tracks="metadata.tracks" @set_track="set_track" />
+      <CtxMenu
+        v-model="ctx_show"
+        :tracks="metadata.tracks"
+        @set_track="set_track"
+      />
     </div>
 
     <!-- control panel -->
-    <div class="row justify-center control-wraper">
-      <div class="control-panel" :class="{hide: !loaded || !is_visible}">
+    <div class="row justify-center control-wrapper">
+      <div class="control-panel" :class="{ hide: !loaded || !is_visible }">
         <!-- seek bar -->
         <SeekBar :playback_detail="playback_detail" @seek="seek" />
 
@@ -29,11 +33,12 @@
           @pause="pause"
           @stop="stop"
           @set_volume="set_volume"
+          @request_thumbs="get_thumbs"
         />
       </div>
 
       <!-- annoying tips -->
-      <div class="annoy" v-if="tip.show">{{tip.content}}</div>
+      <div class="annoy" v-if="tip.show">{{ tip.content }}</div>
     </div>
   </q-page>
 </template>
@@ -42,7 +47,7 @@
 import SeekBar from "components/SeekBar.vue";
 import BottomBar from "components/BottomBar.vue";
 import CtxMenu from "components/CtxMenu.vue";
-const { remote } = window.require("electron");
+const { remote, ipcRenderer } = window.require("electron");
 const fs = window.require("fs");
 const path = window.require("path");
 const IPC = remote.require("./src_electron/IPC_client");
@@ -315,12 +320,12 @@ export default {
       if (ev.target !== this.$refs.event_area) return;
       let key = "";
       if (ev.deltaX === 0) {
-        // whell down or up
+        // wheel down or up
         if (ev.deltaY > 0) key = "WHEEL_DOWN";
         else if (ev.deltaY < 0) key = "WHEEL_UP";
         else return;
       } else {
-        // whell left or right
+        // wheel left or right
         if (ev.deltaX > 0) key = "WHEEL_RIGHT";
         else if (ev.deltaX < 0) key = "WHEEL_LEFT";
         else return;
@@ -344,6 +349,9 @@ export default {
 
         this.annoy(`Set ${track.type} track: ${track.title || track.codec}`);
       });
+    },
+    get_thumbs() {
+      ipcRenderer.send("request-thumbs");
     }
   },
   created() {
@@ -378,7 +386,7 @@ export default {
 }
 
 // control panel
-.control-wraper {
+.control-wrapper {
   position: fixed;
   left: 0;
   bottom: 0;

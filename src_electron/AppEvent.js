@@ -5,8 +5,10 @@ const {
 } = require("electron");
 const PSTATE = require("./PlayState");
 const IPC = require("./IPC_client");
+const Path = require('path');
 
 let mem_bounds = undefined;
+let tmb;
 
 module.exports = function (addon) {
   ipcMain.on("close", (e, arg) => {
@@ -120,5 +122,27 @@ module.exports = function (addon) {
     shared.play_state = PSTATE.NONE;
     pwin.hide();
     aux.minimize();
+  });
+
+  ipcMain.on('request-thumbs', () => {
+    console.log('req thumb');
+    tmb = new BrowserWindow({
+      width: 240,
+      height: 135,
+      frame: true,
+      show: false
+    });
+    thw = tmb.getNativeWindowHandle().readInt32LE();
+
+    IPC.get_property('path').then(_path => {
+      console.log(_path);
+      let dir = Path.resolve(_path, '../');
+      addon.gen_thumbs(function (env, arg) {
+        console.log('thumb gend');
+        console.log(env);
+        console.log(arg);
+        tmb.destroy();
+      }, _path, dir, thw);
+    });
   });
 };
