@@ -2,8 +2,8 @@
   <q-scroll-area class="fit">
     <q-list dense>
       <q-item-label header>PLAYLIST</q-item-label>
-      <q-item clickable>
-        <q-item-section>test</q-item-section>
+      <q-item clickable v-for="item in list" :key="item">
+        <q-item-section>{{item}}</q-item-section>
       </q-item>
     </q-list>
   </q-scroll-area>
@@ -11,7 +11,17 @@
 
 <script>
 export default {
-  name: "PlayList"
+  name: "PlayList",
+  props:{
+    list:{
+      type: Array,
+      default: []
+    },
+    current:{
+      type: String,
+      default: ''
+    }
+  }
 };
 </script>
 

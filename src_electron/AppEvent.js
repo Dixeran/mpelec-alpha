@@ -6,6 +6,8 @@ const {
 const PSTATE = require("./PlayState");
 const IPC = require("./IPC_client");
 const Path = require('path');
+const Crypto = require('crypto');
+const Fs = require('fs');
 
 let mem_bounds = undefined;
 let tmb;
@@ -111,6 +113,54 @@ module.exports = function (addon) {
     pwin.restore();
     aux.hide();
     osc.focus();
+  });
+
+  ipcMain.on('playback-start', () => {
+    // TODO: get path from mpv, if newly, curb all file at same folder;
+    // Update playlist, send to View.
+    // else update current playing file.
+    console.log('get playlist');
+    IPC.get_property('path').then(_path => {
+      const location = Path.resolve(_path, '../'); // video location
+      const filename = Path.basename(_path); // video filename
+      if (location !== shared.play_detail.path) {
+        // play at different folder
+        shared.play_detail.path = location;
+        const ext = Path.extname(filename);
+        let playlist = [];
+        Fs.readdir(location, (err, files) => {
+          if (err) console.error(err);
+          files.forEach(file => {
+            if (Path.extname(file) === ext) playlist.push(file);
+          });
+          playlist.sort((a, b) => {
+            return addon.cmp_str_logical(a, b);
+          });
+          console.log(playlist);
+          shared.forms.osc.webContents.send('set-playlist', {
+            list: playlist,
+            current: filename
+          });
+        });
+
+        // TODO: regenerate playlist and hint history
+        let sha1_location = Crypto.createHash('sha1').update(location).digest('hex');
+        let temp_path = Path.resolve(app.getPath('userData'), sha1_location);
+        shared.play_detail.temp_path = temp_path;
+
+        Fs.readFile(Path.resolve(temp_path, './history.json'), (err, data) => {
+          if (err) {
+            // history not exist
+          } else {
+            history = JSON.parse(data);
+            shared.forms.osc.webContents.send('set-history', history);
+          }
+        });
+      }
+
+      let sha1_filename = Crypto.createHash('sha1').update(filename).digest('hex');
+
+    })
   });
 
   ipcMain.on("playback-stop", () => {

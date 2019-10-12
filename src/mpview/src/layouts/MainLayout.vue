@@ -31,7 +31,7 @@
 
     <!-- playlist -->
     <q-drawer v-model="drawer" overlay bordered side="right" behavior="desktop">
-      <PlayList />
+      <PlayList :list="playlist" :current="current"/>
       <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
         <q-btn
           v-if="drawer"
@@ -109,7 +109,9 @@ export default {
       is_playing: false,
       is_visible: true,
       show_about: false,
-      drawer: false
+      drawer: false,
+      playlist: [],
+      current: ""
     };
   },
   methods: {
@@ -133,6 +135,11 @@ export default {
     ipcRenderer.on("playback-start", () => {
       this.is_playing = true;
       this.$router.push("play");
+    });
+    ipcRenderer.on("set-playlist", (event, arg) => {
+      console.log(arg);
+      this.playlist = arg.list || [];
+      this.current = arg.current || "";
     });
   }
 };

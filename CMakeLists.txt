@@ -22,6 +22,9 @@ target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
 link_directories("${CMAKE_SOURCE_DIR}/native")
 target_link_libraries(${PROJECT_NAME} "${CMAKE_SOURCE_DIR}/native/mpv.lib")
 
+# link for win32 API
+target_link_libraries(${PROJECT_NAME} "Shlwapi.lib")
+
 # Include N-API wrappers
 execute_process(COMMAND node -p "require('node-addon-api').include"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/native

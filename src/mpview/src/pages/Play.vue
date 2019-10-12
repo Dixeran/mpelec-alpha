@@ -66,7 +66,6 @@ let input_conf = [];
 // let __dirname = remote.app.getAppPath();
 // use path.resolve(__dirname, {relative path}) instead.
 const __dirname = remote.getGlobal("shared").__dirname;
-let DBus = remote.require("./src_electron/DBus");
 
 export default {
   data() {
@@ -106,6 +105,13 @@ export default {
   },
   methods: {
     init() {
+      IPC.once("end-file", () => {
+        // failed before file-loaded
+        if (!this.loaded) {
+          this.$emit("stop");
+        }
+      });
+
       IPC.once("file-loaded", () => {
         this.loaded = true;
         console.log("start init");
@@ -151,13 +157,12 @@ export default {
           tracks.forEach(tr => {
             this.metadata.tracks[tr.type].push(tr);
           });
+          ipcRenderer.send("playback-start");
         });
       });
     },
     check_visible(ev) {
-      if (ev.clientY > window.innerHeight - 100) {
-        this.is_visible = true;
-      } else this.is_visible = false;
+      this.is_visible = ev.clientY > window.innerHeight - 100;
     },
     annoy(msg) {
       if (this.tip.tick) {
@@ -367,8 +372,6 @@ export default {
   created() {
     this.init();
     this.bind_keys();
-    console.log(DBus.name);
-    DBus.name = "omg";
   }
 };
 </script>
@@ -393,7 +396,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.2);
   }
 }
 

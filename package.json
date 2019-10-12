@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "electron . test.mp4",
-    "start": "electron .",
+    "start": "chcp 65001 && electron .",
     "build:native": "cmake-js rebuild && @powershell cp mpv-1.dll build/Release/mpv-1.dll",
     "build:dir": "electron-builder --dir",
     "build:win": "electron-builder --win"
