@@ -1,18 +1,14 @@
-const {
-  ipcMain,
-  app,
-  BrowserWindow
-} = require("electron");
+const { ipcMain, app, BrowserWindow } = require("electron");
 const PSTATE = require("./PlayState");
 const IPC = require("./IPC_client");
-const Path = require('path');
-const Crypto = require('crypto');
-const Fs = require('fs');
+const Path = require("path");
+const Crypto = require("crypto");
+const Fs = require("fs");
 
 let mem_bounds = undefined;
 let tmb;
 
-module.exports = function (addon) {
+module.exports = function(addon) {
   ipcMain.on("close", (e, arg) => {
     IPC.quit();
     app.quit();
@@ -20,11 +16,7 @@ module.exports = function (addon) {
 
   // window size controls
   function setWindowState(state) {
-    let {
-      osc,
-      pwin,
-      aux
-    } = shared.forms;
+    let { osc, pwin, aux } = shared.forms;
 
     const old_state = shared.forms.window_state;
     if (state === "maximized") {
@@ -72,12 +64,12 @@ module.exports = function (addon) {
     } else if (state === "fullscreen") {
       console.log("fullscreen");
       // store current bounds
-      if (old_state !== 'fullscreen') {
+      if (old_state !== "fullscreen") {
         mem_bounds = osc.getBounds();
         osc.setFullScreen(true);
         osc.focus();
         shared.forms.window_state = "fullscreen";
-      } else setWindowState('normal');
+      } else setWindowState("normal");
     }
   }
 
@@ -86,9 +78,7 @@ module.exports = function (addon) {
   });
 
   ipcMain.on("fullscreen", () => {
-    let {
-      osc
-    } = shared.forms;
+    let { osc } = shared.forms;
     setWindowState("fullscreen");
   });
 
@@ -97,14 +87,8 @@ module.exports = function (addon) {
   });
 
   ipcMain.on("open-file", (event, arg) => {
-    let {
-      osc,
-      pwin,
-      aux
-    } = shared.forms;
-    let {
-      path
-    } = arg;
+    let { osc, pwin, aux } = shared.forms;
+    let { path } = arg;
 
     addon.play(path);
     osc.webContents.send("playback-start");
@@ -115,13 +99,12 @@ module.exports = function (addon) {
     osc.focus();
   });
 
-  ipcMain.on('playback-start', () => {
-    // TODO: get path from mpv, if newly, curb all file at same folder;
+  ipcMain.on("playback-start", () => {
+    // TODO: Get path from mpv, if newly, curb all file at same folder;
     // Update playlist, send to View.
     // else update current playing file.
-    console.log('get playlist');
-    IPC.get_property('path').then(_path => {
-      const location = Path.resolve(_path, '../'); // video location
+    IPC.get_property("path").then(_path => {
+      const location = Path.resolve(_path, "../"); // video location
       const filename = Path.basename(_path); // video filename
       if (location !== shared.play_detail.path) {
         // play at different folder
@@ -137,45 +120,48 @@ module.exports = function (addon) {
             return addon.cmp_str_logical(a, b);
           });
           console.log(playlist);
-          shared.forms.osc.webContents.send('set-playlist', {
+          shared.forms.osc.webContents.send("set-playlist", {
             list: playlist,
             current: filename
           });
         });
 
-        // TODO: regenerate playlist and hint history
-        let sha1_location = Crypto.createHash('sha1').update(location).digest('hex');
-        let temp_path = Path.resolve(app.getPath('userData'), sha1_location);
+        // TODO: read history from temp file
+        let sha1_location = Crypto.createHash("sha1")
+          .update(location)
+          .digest("hex");
+        let temp_path = Path.resolve(app.getPath("userData"), sha1_location);
         shared.play_detail.temp_path = temp_path;
 
-        Fs.readFile(Path.resolve(temp_path, './history.json'), (err, data) => {
+        Fs.readFile(Path.resolve(temp_path, "./history.json"), (err, data) => {
           if (err) {
             // history not exist
           } else {
             history = JSON.parse(data);
-            shared.forms.osc.webContents.send('set-history', history);
+            shared.forms.osc.webContents.send("set-history", history);
           }
         });
-      }
+      } else
+        shared.forms.osc.webContents.send("set-playlist", {
+          current: filename
+        }); // update current file only
 
-      let sha1_filename = Crypto.createHash('sha1').update(filename).digest('hex');
-
-    })
+      let sha1_filename = Crypto.createHash("sha1")
+        .update(filename)
+        .digest("hex");
+    });
   });
 
   ipcMain.on("playback-stop", () => {
-    let {
-      pwin,
-      aux
-    } = shared.forms;
+    let { pwin, aux } = shared.forms;
 
     shared.play_state = PSTATE.NONE;
     pwin.hide();
     aux.minimize();
   });
 
-  ipcMain.on('request-thumbs', () => {
-    console.log('req thumb');
+  ipcMain.on("request-thumbs", () => {
+    console.log("req thumb");
     tmb = new BrowserWindow({
       width: 240,
       height: 135,
@@ -184,15 +170,20 @@ module.exports = function (addon) {
     });
     thw = tmb.getNativeWindowHandle().readInt32LE();
 
-    IPC.get_property('path').then(_path => {
+    IPC.get_property("path").then(_path => {
       console.log(_path);
-      let dir = Path.resolve(_path, '../');
-      addon.gen_thumbs(function (env, arg) {
-        console.log('thumb gend');
-        console.log(env);
-        console.log(arg);
-        tmb.destroy();
-      }, _path, dir, thw);
+      let dir = Path.resolve(_path, "../");
+      addon.gen_thumbs(
+        function(env, arg) {
+          console.log("thumb gend");
+          console.log(env);
+          console.log(arg);
+          tmb.destroy();
+        },
+        _path,
+        dir,
+        thw
+      );
     });
   });
 };

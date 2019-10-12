@@ -8,12 +8,12 @@ module.exports = {
     transparent: true,
     backgroundColor: "#FFFFFFFF",
     //use pure white when loading, change it to transparent when loaded.
-    titleBarStyle: 'hidden',
+    titleBarStyle: "hidden",
     webPreferences: {
       backgroundThrottling: false,
       nodeIntegration: true,
       webviewTag: true
-    },
+    }
   },
   PWIN: {
     frame: false,
@@ -26,4 +26,4 @@ module.exports = {
       webviewTag: true
     }
   }
-}
+};

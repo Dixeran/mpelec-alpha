@@ -1,14 +1,14 @@
 const electron = require("electron");
-const path = require('path');
+const path = require("path");
 const addon = require("bindings")("addon");
 const PSTATE = require("./src_electron/PlayState");
 const WindowConfig = require("./src_electron/WindowConfig");
 require("./src_electron/AppEvent")(addon);
-const IPC = require('./src_electron/IPC_client');
+const IPC = require("./src_electron/IPC_client");
 if (!process.defaultApp) {
   // after build
-  require('dotenv').config({
-    path: path.resolve(__dirname, '.env')
+  require("dotenv").config({
+    path: path.resolve(__dirname, ".env")
   });
 }
 
@@ -17,17 +17,17 @@ global.shared = {
     osc: null,
     pwin: null,
     aux: null,
-    window_state: 'normal' // normal, maximized, minimized, fullscreen
+    window_state: "normal" // normal, maximized, minimized, fullscreen
   },
   play_state: PSTATE.NONE,
   play_detail: {
     path: undefined,
     filename: undefined,
     temp_path: undefined,
-    hash_tag: undefined, // calculate from path-filename
+    hash_tag: undefined // calculate from path-filename
   },
   __dirname: __dirname
-}
+};
 
 // Disable hw to fix transparent issue
 // however disable hw will cause transparent window un-resizable
@@ -35,12 +35,12 @@ global.shared = {
 // Also, call pwin.show() will cause a black mask, ALWAYS use pwin.restore() instead.
 // electron.app.disableHardwareAcceleration();
 
-electron.app.on("ready", function () {
+electron.app.on("ready", function() {
   let _aux = new electron.BrowserWindow({
     show: false
   });
   _aux.minimize();
-  _aux.on('restore', () => {
+  _aux.on("restore", () => {
     _aux.hide();
     shared.forms.osc.show();
     if (shared.play_state !== PSTATE.NONE) shared.forms.pwin.restore();
@@ -66,7 +66,7 @@ electron.app.on("ready", function () {
   // bind window movement
   addon.bind_window(hwnd_osc, hwnd_pwin);
 
-  if (process.env.NODE_ENV === 'deployment') {
+  if (process.env.NODE_ENV === "deployment") {
     osc.loadFile(__dirname + "/src/mpview/dist/spa/index.html").then(loaded);
   } else {
     osc.loadURL("http://localhost:8080").then(loaded);
@@ -79,14 +79,15 @@ electron.app.on("ready", function () {
     _size = osc.getSize();
     osc.setSize(_size[0] + 1, _size[1] + 1);
     osc.setBackgroundColor("#00FFFFFF");
-    console.log('path:');
+    console.log("path:");
     console.log(addon.get_path());
     IPC.init();
     console.log("ready to play");
 
     // use argv to open file
     let args;
-    if (process.defaultApp) args = process.argv.slice(2); // when dev
+    if (process.defaultApp) args = process.argv.slice(2);
+    // when dev
     else args = process.argv.slice(1);
 
     file = args[0];
@@ -101,4 +102,4 @@ electron.app.on("ready", function () {
       // TODO: add rest files to playlist.
     }
   }
-})
+});
