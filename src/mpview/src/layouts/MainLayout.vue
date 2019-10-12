@@ -30,8 +30,15 @@
     </q-bar>
 
     <!-- playlist -->
-    <q-drawer v-model="drawer" overlay bordered side="right" behavior="desktop">
-      <PlayList :list="playlist" :current="current"/>
+    <q-drawer
+      v-model="drawer"
+      overlay
+      bordered
+      side="right"
+      behavior="desktop"
+      style="width: 300px"
+    >
+      <PlayList :list="playlist" :current="current" />
       <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
         <q-btn
           v-if="drawer"
@@ -138,8 +145,8 @@ export default {
     });
     ipcRenderer.on("set-playlist", (event, arg) => {
       console.log(arg);
-      this.playlist = arg.list || [];
-      this.current = arg.current || "";
+      this.playlist = arg.list || this.playlist || [];
+      this.current = arg.current || this.current || "";
     });
   }
 };

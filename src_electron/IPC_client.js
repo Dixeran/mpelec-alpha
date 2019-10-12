@@ -1,5 +1,5 @@
-const net = require('net');
-const events = require('events');
+const net = require("net");
+const events = require("events");
 
 let socket = new net.Socket();
 let observer_id = 0,
@@ -9,18 +9,18 @@ let observer_id = 0,
 class MpvEvent extends events {
   init() {
     socket.connect({
-      path: '\\\\.\\pipe\\mpvsocket'
+      path: "\\\\.\\pipe\\mpvsocket"
     });
     return this;
   }
   set_property(name, args) {
-    return this.send_command('set_property', [name, ...args]);
+    return this.send_command("set_property", [name, ...args]);
   }
   get_property(name) {
-    return this.send_command('get_property', [name]);
+    return this.send_command("get_property", [name]);
   }
   observe_property(prop_name) {
-    return this.send_command('observe_property', [++observer_id, prop_name]);
+    return this.send_command("observe_property", [++observer_id, prop_name]);
   }
   /**
    * Send command with args
@@ -33,54 +33,54 @@ class MpvEvent extends events {
         command: args ? [name, ...args] : [name],
         request_id: ++command_id
       };
-      console.log('write cmd:');
+      console.log("write cmd:");
       console.log(ipc_data);
 
       function bindRes(res_data) {
         if (res_data.request_id === ipc_data.request_id) {
           // res for this set property
-          this.removeListener('resProperty', bindRes);
-          console.log('recived:');
+          this.removeListener("resProperty", bindRes);
+          console.log("recived:");
           console.log(res_data);
 
-          if (res_data.error === 'success') resolve(res_data.data);
+          if (res_data.error === "success") resolve(res_data.data);
           else reject(res_data);
         }
       }
 
-      this.on('resProperty', bindRes);
+      this.on("resProperty", bindRes);
       socket.write(`${JSON.stringify(ipc_data)}\n`);
     });
   }
 
   quit() {
-    this.send_command('quit');
+    this.send_command("quit");
 
-    socket.removeAllListeners('close');
-    socket.removeAllListeners('error');
-    socket.removeAllListeners('data');
+    socket.removeAllListeners("close");
+    socket.removeAllListeners("error");
+    socket.removeAllListeners("data");
     socket.destroy();
   }
-};
+}
 
 let my_emitter = new MpvEvent();
 module.exports = my_emitter;
 
-socket.on('error', (err) => {
+socket.on("error", err => {
   console.log(err);
 });
 
-socket.on('close', (err) => {
-  console.log('Socket closed, try to reconnect..');
+socket.on("close", err => {
+  console.log("Socket closed, try to reconnect..");
   socket.end();
 
   socket.connect({
-    path: '\\\\.\\pipe\\mpvsocket'
+    path: "\\\\.\\pipe\\mpvsocket"
   });
 });
 
-socket.on('data', (data) => {
-  datas = data.toString().split('\n'); // multi response can be merged
+socket.on("data", data => {
+  datas = data.toString().split("\n"); // multi response can be merged
 
   datas.forEach(res => {
     if (res.length <= 0) return; // empty string may exist
@@ -89,9 +89,9 @@ socket.on('data', (data) => {
 
     if (res.request_id) {
       // res for command
-      my_emitter.emit('resProperty', res);
+      my_emitter.emit("resProperty", res);
     } else if (res.event) {
-      if (res.event === 'property-change')
+      if (res.event === "property-change")
         // event for observe property
         my_emitter.emit(`${res.name}-change`, res.data);
       else {
@@ -101,4 +101,4 @@ socket.on('data', (data) => {
       }
     }
   });
-})
+});
