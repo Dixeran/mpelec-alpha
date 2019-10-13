@@ -94,11 +94,6 @@ module.exports = function(addon) {
   ipcMain.on("open-list-file", (ev, _filename) => {
     // concat the dir of playlist and the filename
     let vpath = Path.resolve(shared.play_detail.path, _filename);
-    // let { osc, pwin } = shared.forms;
-    // pwin.hide();
-    // setTimeout(function() {
-    //   openfile(vpath);
-    // }, 200);
     addon.play(vpath);
   });
 
@@ -160,7 +155,6 @@ module.exports = function(addon) {
 
   ipcMain.on("playback-stop", () => {
     let { pwin, aux } = shared.forms;
-
     shared.play_state = PSTATE.NONE;
     pwin.hide();
     aux.minimize();
@@ -182,6 +176,7 @@ module.exports = function(addon) {
     Fs.writeFile(record_path, JSON.stringify(data), err => {
       if (err) console.error(err);
     });
+    ev.reply("saved-history");
   });
 
   ipcMain.on("request-thumbs", () => {

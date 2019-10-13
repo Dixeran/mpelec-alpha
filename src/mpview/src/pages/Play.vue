@@ -119,7 +119,7 @@ export default {
 
       IPC.observe_property("media-title");
       IPC.on("media-title-change", _title => {
-        if(!_title){
+        if (!_title) {
           this.$emit(
             "end_file",
             this.playback_detail.time_pos / this.playback_detail.duration
@@ -154,11 +154,13 @@ export default {
           this.playback_detail.time_pos = _time_pos;
         }
       });
+
       IPC.observe_property("volume");
       IPC.on("volume-change", _volume => {
         this.playback_detail.volume = _volume;
         this.annoy("Set volume: " + _volume + "%");
       });
+
       IPC.on("pause", () => {
         this.is_playing = false;
       });
@@ -168,7 +170,6 @@ export default {
 
       IPC.once("playback-restart", () => {
         this.loaded = true;
-        console.log("start init");
       });
     },
     check_visible(ev) {

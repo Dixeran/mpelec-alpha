@@ -99,13 +99,14 @@
         @end_file="end_file"
         @stop="playback_stop"
         @show_list="drawer = true"
-      />
+      ></router-view>
     </q-page-container>
   </q-layout>
 </template>
 
 <script>
 const { ipcRenderer, remote } = window.require("electron");
+const IPC = remote.require("./src_electron/IPC_client");
 import PlayList from "components/PlayList.vue";
 
 export default {
@@ -124,6 +125,14 @@ export default {
   },
   methods: {
     form_control(cmd) {
+      if (cmd === "close") {
+        // invoke media-title-change to save history
+        IPC.send_command("stop");
+        ipcRenderer.once("saved-history", () => {
+          ipcRenderer.send(cmd);
+        });
+        return;
+      }
       ipcRenderer.send(cmd);
     },
     playback_stop(pos_percent) {
@@ -150,8 +159,7 @@ export default {
       if (list_pos === this.playlist.length - 1) {
         //  last file ended
         this.playback_stop(pos_percent);
-      }
-      else{
+      } else {
         ipcRenderer.send("set-history", pos_percent);
         this.open_list_file(this.playlist[list_pos + 1]);
       }
@@ -166,6 +174,12 @@ export default {
       console.log(arg);
       this.playlist = arg.list || this.playlist || [];
       this.current = arg.current || this.current || "";
+    });
+    ipcRenderer.on("set-history", (ev, history) => {
+      console.log(history);
+    });
+    ipcRenderer.on("saved-history", () => {
+      console.log("history saved");
     });
   }
 };
