@@ -112,44 +112,25 @@ export default {
         }
       });
 
-      IPC.once("file-loaded", () => {
-        this.loaded = true;
-        console.log("start init");
-        IPC.get_property("volume").then(vol => {
-          this.playback_detail.volume = vol;
-        });
-        IPC.get_property("media-title").then(title => {
-          this.playback_detail.title = title;
-        });
-        IPC.get_property("duration").then(dur => {
-          this.playback_detail.duration = dur;
-        });
+      IPC.observe_property("volume");
+      IPC.on("volume-change", vol => {
+        this.playback_detail.volume = vol;
+      });
+
+      IPC.observe_property("media-title");
+      IPC.on("media-title-change", _title => {
+        if(!_title){
+          this.$emit(
+            "end_file",
+            this.playback_detail.time_pos / this.playback_detail.duration
+          );
+          return;
+        }
+        // media title change means video change
+        this.playback_detail.title = _title;
+        ipcRenderer.send("playback-start");
         IPC.get_property("pause").then(is_pause => {
           if (is_pause) this.is_playing = false;
-        });
-
-        IPC.observe_property("time-pos");
-        IPC.on("time-pos-change", _time_pos => {
-          // throttle
-          _time_pos = Math.round(_time_pos);
-          if (_time_pos !== this.playback_detail.time_pos) {
-            this.playback_detail.time_pos = _time_pos;
-          }
-        });
-        IPC.observe_property("volume");
-        IPC.on("volume-change", _volume => {
-          this.playback_detail.volume = _volume;
-          this.annoy("Set volume: " + _volume + "%");
-        });
-        IPC.on("pause", () => {
-          this.is_playing = false;
-        });
-        IPC.on("unpause", () => {
-          this.is_playing = true;
-        });
-        IPC.on("end-file", () => {
-          // TODO: play to the end. Stop or play next video.
-          this.$emit("stop");
         });
 
         IPC.get_property("track-list").then(tracks => {
@@ -157,8 +138,37 @@ export default {
           tracks.forEach(tr => {
             this.metadata.tracks[tr.type].push(tr);
           });
-          ipcRenderer.send("playback-start");
         });
+      });
+
+      IPC.observe_property("duration");
+      IPC.on("duration-change", dur => {
+        this.playback_detail.duration = dur;
+      });
+
+      IPC.observe_property("time-pos");
+      IPC.on("time-pos-change", _time_pos => {
+        // throttle
+        _time_pos = Math.round(_time_pos);
+        if (_time_pos !== this.playback_detail.time_pos) {
+          this.playback_detail.time_pos = _time_pos;
+        }
+      });
+      IPC.observe_property("volume");
+      IPC.on("volume-change", _volume => {
+        this.playback_detail.volume = _volume;
+        this.annoy("Set volume: " + _volume + "%");
+      });
+      IPC.on("pause", () => {
+        this.is_playing = false;
+      });
+      IPC.on("unpause", () => {
+        this.is_playing = true;
+      });
+
+      IPC.once("playback-restart", () => {
+        this.loaded = true;
+        console.log("start init");
       });
     },
     check_visible(ev) {
@@ -193,6 +203,10 @@ export default {
       document.removeEventListener("keydown", this.handle_key_event);
       window.removeEventListener("wheel", this.wheel_event);
       IPC.send_command("stop");
+      this.$emit(
+        "stop",
+        this.playback_detail.time_pos / this.playback_detail.duration
+      );
     },
     set_volume(e) {
       console.log(e);

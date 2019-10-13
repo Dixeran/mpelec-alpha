@@ -38,7 +38,7 @@
       behavior="desktop"
       style="width: 300px"
     >
-      <PlayList :list="playlist" :current="current" />
+      <PlayList :list="playlist" :current="current" @play="open_list_file" />
       <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
         <q-btn
           v-if="drawer"
@@ -96,6 +96,7 @@
       <!-- This is where pages get injected -->
       <router-view
         @fullscreen="form_control('fullscreen')"
+        @end_file="end_file"
         @stop="playback_stop"
         @show_list="drawer = true"
       />
@@ -125,7 +126,9 @@ export default {
     form_control(cmd) {
       ipcRenderer.send(cmd);
     },
-    playback_stop() {
+    playback_stop(pos_percent) {
+      // click stop btn
+      ipcRenderer.send("set-history", pos_percent);
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
@@ -136,6 +139,22 @@ export default {
       if (!this.is_playing) return;
 
       this.is_visible = e.clientY < 100;
+    },
+    open_list_file(item) {
+      // this.$router.push("/");
+      ipcRenderer.send("open-list-file", item);
+    },
+    end_file(pos_percent) {
+      // naturally play to the end
+      let list_pos = this.playlist.indexOf(this.current);
+      if (list_pos === this.playlist.length - 1) {
+        //  last file ended
+        this.playback_stop(pos_percent);
+      }
+      else{
+        ipcRenderer.send("set-history", pos_percent);
+        this.open_list_file(this.playlist[list_pos + 1]);
+      }
     }
   },
   mounted() {

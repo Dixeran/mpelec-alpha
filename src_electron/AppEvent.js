@@ -87,16 +87,19 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("open-file", (event, arg) => {
-    let { osc, pwin, aux } = shared.forms;
     let { path } = arg;
+    openfile(path);
+  });
 
-    addon.play(path);
-    osc.webContents.send("playback-start");
-    shared.play_state = PSTATE.PLAY;
-    // TODO: fit video size.
-    pwin.restore();
-    aux.hide();
-    osc.focus();
+  ipcMain.on("open-list-file", (ev, _filename) => {
+    // concat the dir of playlist and the filename
+    let vpath = Path.resolve(shared.play_detail.path, _filename);
+    // let { osc, pwin } = shared.forms;
+    // pwin.hide();
+    // setTimeout(function() {
+    //   openfile(vpath);
+    // }, 200);
+    addon.play(vpath);
   });
 
   ipcMain.on("playback-start", () => {
@@ -106,6 +109,7 @@ module.exports = function(addon) {
     IPC.get_property("path").then(_path => {
       const location = Path.resolve(_path, "../"); // video location
       const filename = Path.basename(_path); // video filename
+
       if (location !== shared.play_detail.path) {
         // play at different folder
         shared.play_detail.path = location;
@@ -125,30 +129,32 @@ module.exports = function(addon) {
             current: filename
           });
         });
-
         // TODO: read history from temp file
         let sha1_location = Crypto.createHash("sha1")
           .update(location)
           .digest("hex");
         let temp_path = Path.resolve(app.getPath("userData"), sha1_location);
         shared.play_detail.temp_path = temp_path;
-
+        console.log("temp path : ");
+        console.log(temp_path);
         Fs.readFile(Path.resolve(temp_path, "./history.json"), (err, data) => {
-          if (err) {
-            // history not exist
-          } else {
+          if (!err) {
             history = JSON.parse(data);
             shared.forms.osc.webContents.send("set-history", history);
           }
         });
-      } else
+      } else {
         shared.forms.osc.webContents.send("set-playlist", {
           current: filename
         }); // update current file only
+      }
+      shared.play_detail.path = location;
+      shared.play_detail.filename = filename;
 
       let sha1_filename = Crypto.createHash("sha1")
         .update(filename)
         .digest("hex");
+      shared.play_detail.hash_tag = sha1_filename;
     });
   });
 
@@ -158,6 +164,24 @@ module.exports = function(addon) {
     shared.play_state = PSTATE.NONE;
     pwin.hide();
     aux.minimize();
+  });
+
+  ipcMain.on("set-history", (ev, pos_percent) => {
+    let { temp_path } = shared.play_detail;
+    const record_path = Path.resolve(temp_path, "./history.json");
+    console.log(record_path);
+    let data = {
+      filename: shared.play_detail.filename,
+      time_pos_percent: pos_percent
+    };
+    if (!Fs.existsSync(temp_path)) {
+      Fs.mkdir(temp_path, { recursive: true }, err => {
+        if (err) console.error(err);
+      });
+    }
+    Fs.writeFile(record_path, JSON.stringify(data), err => {
+      if (err) console.error(err);
+    });
   });
 
   ipcMain.on("request-thumbs", () => {

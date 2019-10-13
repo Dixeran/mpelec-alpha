@@ -23,11 +23,27 @@ global.shared = {
   play_detail: {
     path: undefined,
     filename: undefined,
-    temp_path: undefined,
+    temp_path: undefined, // calculate from app.getPath + hash(path)
     hash_tag: undefined // calculate from path-filename
   },
   __dirname: __dirname
 };
+
+/**
+ * Open video file
+ * @param {String} _path video path
+ */
+function openfile(_path) {
+  let { osc, pwin, aux } = shared.forms;
+  osc.webContents.send("playback-start");
+  addon.play(_path);
+  shared.play_state = PSTATE.PLAY;
+  // TODO: fit video size.
+  pwin.restore();
+  aux.hide();
+  osc.focus();
+}
+global.openfile = openfile;
 
 // Disable hw to fix transparent issue
 // however disable hw will cause transparent window un-resizable
@@ -92,14 +108,8 @@ electron.app.on("ready", function() {
 
     file = args[0];
     if (file) {
-      addon.play(file);
-      osc.webContents.send("playback-start");
-      shared.play_state = PSTATE.PLAY;
-      // TODO: fit video size.
-      win.restore();
-      _aux.hide();
-      osc.focus();
-      // TODO: add rest files to playlist.
+      openfile(file);
+      // TODO: add rest to playlist
     }
   }
 });
