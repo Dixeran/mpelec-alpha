@@ -160,6 +160,8 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("save-history", (ev, pos_percent) => {
+    console.log("percent" + pos_percent);
+    if (!pos_percent) return;
     let { temp_path } = shared.play_detail;
     const record_path = Path.resolve(temp_path, "./history.json");
     console.log(record_path);

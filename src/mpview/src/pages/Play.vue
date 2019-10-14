@@ -382,6 +382,23 @@ export default {
     },
     get_thumbs() {
       ipcRenderer.send("request-thumbs");
+    },
+    cleanUp() {
+      // Noted that sometimes playback-restart is received,
+      // but time_pos is still not available.
+      if (
+        !this.loaded ||
+        !this.playback_detail.time_pos ||
+        this.playback_detail.duration
+      )
+        return true;
+
+      IPC.send_command("stop");
+      this.$emit(
+        "stop",
+        this.playback_detail.time_pos / this.playback_detail.duration
+      );
+      return false;
     }
   },
   created() {

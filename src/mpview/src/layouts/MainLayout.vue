@@ -33,7 +33,6 @@
     <q-drawer
       v-model="drawer"
       overlay
-      bordered
       side="right"
       behavior="desktop"
       style="width: 300px"
@@ -57,6 +56,8 @@
         />
       </div>
     </q-drawer>
+    <!-- drawer mask -->
+    <div class="playlist-mask" v-if="drawer" @click.stop="drawer = false"></div>
 
     <!-- about dialog -->
     <q-dialog
@@ -104,6 +105,7 @@
         @end_file="end_file"
         @stop="playback_stop"
         @show_list="drawer = true"
+        ref="router_view"
       ></router-view>
     </q-page-container>
   </q-layout>
@@ -131,14 +133,19 @@ export default {
   methods: {
     form_control(cmd) {
       if (cmd === "close") {
-        // invoke media-title-change to save history
-        IPC.send_command("stop");
-        ipcRenderer.once("saved-history", () => {
-          ipcRenderer.send(cmd);
+        IPC.get_property("idle-active").then(is_idle => {
+          if (is_idle) {
+            ipcRenderer.send(cmd);
+          } else {
+            ipcRenderer.once("saved-history", () => {
+              ipcRenderer.send(cmd);
+            });
+            if (this.$refs.router_view.cleanUp()) {
+              ipcRenderer.send(cmd);
+            }
+          }
         });
-        return;
-      }
-      ipcRenderer.send(cmd);
+      } else ipcRenderer.send(cmd);
     },
     playback_stop(pos_percent) {
       // click stop btn
@@ -218,5 +225,16 @@ export default {
   &.visible {
     opacity: 1;
   }
+}
+
+.playlist-mask{
+  z-index 200;
+  position fixed;
+  left 0;
+  top 0;
+  height 100vh;
+  width 100vw;
+  opacity 0.1;
+  background-color rgba(0, 0, 0, 0.1);
 }
 </style>
