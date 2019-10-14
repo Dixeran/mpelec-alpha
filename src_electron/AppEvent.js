@@ -78,7 +78,6 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("fullscreen", () => {
-    let { osc } = shared.forms;
     setWindowState("fullscreen");
   });
 
@@ -160,7 +159,7 @@ module.exports = function(addon) {
     aux.minimize();
   });
 
-  ipcMain.on("set-history", (ev, pos_percent) => {
+  ipcMain.on("save-history", (ev, pos_percent) => {
     let { temp_path } = shared.play_detail;
     const record_path = Path.resolve(temp_path, "./history.json");
     console.log(record_path);

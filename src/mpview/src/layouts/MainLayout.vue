@@ -38,7 +38,12 @@
       behavior="desktop"
       style="width: 300px"
     >
-      <PlayList :list="playlist" :current="current" @play="open_list_file" />
+      <PlayList
+        :list="playlist"
+        :current="current"
+        @play="open_list_file"
+        @delete_item="delete_list_item"
+      />
       <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
         <q-btn
           v-if="drawer"
@@ -137,7 +142,7 @@ export default {
     },
     playback_stop(pos_percent) {
       // click stop btn
-      ipcRenderer.send("set-history", pos_percent);
+      ipcRenderer.send("save-history", pos_percent);
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
@@ -153,6 +158,11 @@ export default {
       // this.$router.push("/");
       ipcRenderer.send("open-list-file", item);
     },
+    delete_list_item(item_list) {
+      item_list.forEach(item => {
+        this.playlist.splice(this.playlist.indexOf(item), 1);
+      });
+    },
     end_file(pos_percent) {
       // naturally play to the end
       let list_pos = this.playlist.indexOf(this.current);
@@ -160,7 +170,7 @@ export default {
         //  last file ended
         this.playback_stop(pos_percent);
       } else {
-        ipcRenderer.send("set-history", pos_percent);
+        ipcRenderer.send("save-history", pos_percent);
         this.open_list_file(this.playlist[list_pos + 1]);
       }
     }
@@ -177,9 +187,6 @@ export default {
     });
     ipcRenderer.on("set-history", (ev, history) => {
       console.log(history);
-    });
-    ipcRenderer.on("saved-history", () => {
-      console.log("history saved");
     });
   }
 };
