@@ -23,6 +23,9 @@
 </template>
 
 <script>
+/**
+ * @return {string}
+ */
 function Sec2TimeStr(sec) {
   let sec_num = Math.floor(sec);
   let hours = Math.floor(sec_num / 3600);

@@ -97,7 +97,7 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("playback-start", () => {
-    // TODO: Get path from mpv, if newly, curb all file at same folder;
+    // Get path from mpv, if newly, curb all file at same folder;
     // Update playlist, send to View.
     // else update current playing file.
     IPC.get_property("path").then(_path => {
@@ -123,7 +123,7 @@ module.exports = function(addon) {
             current: filename
           });
         });
-        // TODO: read history from temp file
+        // read history from temp file
         let sha1_location = Crypto.createHash("sha1")
           .update(location)
           .digest("hex");
@@ -134,7 +134,8 @@ module.exports = function(addon) {
         Fs.readFile(Path.resolve(temp_path, "./history.json"), (err, data) => {
           if (!err) {
             history = JSON.parse(data);
-            shared.forms.osc.webContents.send("set-history", history);
+            if (history.filename !== filename)
+              shared.forms.osc.webContents.send("set-history", history);
           }
         });
       } else {
@@ -149,6 +150,15 @@ module.exports = function(addon) {
         .update(filename)
         .digest("hex");
       shared.play_detail.hash_tag = sha1_filename;
+      const temp_file_dir = Path.resolve(
+        shared.play_detail.temp_path,
+        sha1_filename
+      );
+      if (!Fs.existsSync(temp_file_dir)) {
+        Fs.mkdir(temp_file_dir, { recursive: true }, err => {
+          if (err) console.error(err);
+        });
+      }
     });
   });
 
@@ -160,9 +170,8 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("save-history", (ev, pos_percent) => {
-    console.log("percent" + pos_percent);
     if (!pos_percent) return;
-    let { temp_path } = shared.play_detail;
+    let { temp_path, hash_tag } = shared.play_detail;
     const record_path = Path.resolve(temp_path, "./history.json");
     console.log(record_path);
     let data = {
@@ -175,9 +184,34 @@ module.exports = function(addon) {
       });
     }
     Fs.writeFile(record_path, JSON.stringify(data), err => {
+      // save as list history
+      if (err) console.error(err);
+    });
+
+    const file_temp_path = Path.resolve(temp_path, hash_tag, "./history.json");
+    Fs.writeFile(file_temp_path, JSON.stringify(data), err => {
+      // save as file history
+      console.log("file history saved");
       if (err) console.error(err);
     });
     ev.reply("saved-history");
+  });
+
+  ipcMain.on("get-file-history", event => {
+    console.log("requrest file history");
+    let { temp_path, hash_tag } = shared.play_detail;
+    Fs.readFile(
+      Path.resolve(temp_path, hash_tag, "./history.json"),
+      (err, data) => {
+        if (err) {
+          console.log(err);
+          event.reply("set-file-history", null);
+        } else {
+          const d = JSON.parse(data);
+          event.reply("set-file-history", d.time_pos_percent);
+        }
+      }
+    );
   });
 
   ipcMain.on("request-thumbs", () => {

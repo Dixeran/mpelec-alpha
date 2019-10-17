@@ -59,6 +59,31 @@
     <!-- drawer mask -->
     <div class="playlist-mask" v-if="drawer" @click.stop="drawer = false"></div>
 
+    <!-- history hint -->
+    <q-dialog v-model="history.show" seamless position="bottom">
+      <q-card style="width: 350px">
+        <q-linear-progress :value="history.time_pos_percent" color="pink" />
+
+        <q-card-section class="row items-center no-wrap">
+          <div>
+            <div class="text-grey">Last playback position</div>
+            <div class="text-weight-bold">{{ history.filename }}</div>
+          </div>
+
+          <q-space />
+
+          <q-btn
+            flat
+            round
+            icon="restore"
+            color="primary"
+            @click="restore_history"
+          />
+          <q-btn flat round icon="close" v-close-popup />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <!-- about dialog -->
     <q-dialog
       v-model="show_about"
@@ -102,6 +127,7 @@
       <!-- This is where pages get injected -->
       <router-view
         @fullscreen="form_control('fullscreen')"
+        @save_history="save_history"
         @end_file="end_file"
         @stop="playback_stop"
         @show_list="drawer = true"
@@ -127,7 +153,12 @@ export default {
       show_about: false,
       drawer: false,
       playlist: [],
-      current: ""
+      current: "",
+      history: {
+        show: false,
+        time_pos_percent: 0,
+        filename: ""
+      }
     };
   },
   methods: {
@@ -147,9 +178,8 @@ export default {
         });
       } else ipcRenderer.send(cmd);
     },
-    playback_stop(pos_percent) {
+    playback_stop() {
       // click stop btn
-      ipcRenderer.send("save-history", pos_percent);
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
@@ -170,16 +200,22 @@ export default {
         this.playlist.splice(this.playlist.indexOf(item), 1);
       });
     },
-    end_file(pos_percent) {
+    save_history(pos_percent) {
+      ipcRenderer.send("save-history", pos_percent);
+    },
+    end_file() {
       // naturally play to the end
       let list_pos = this.playlist.indexOf(this.current);
       if (list_pos === this.playlist.length - 1) {
         //  last file ended
-        this.playback_stop(pos_percent);
+        this.playback_stop();
       } else {
-        ipcRenderer.send("save-history", pos_percent);
         this.open_list_file(this.playlist[list_pos + 1]);
       }
+    },
+    restore_history() {
+      ipcRenderer.send("open-list-file", this.history.filename);
+      this.history.show = false;
     }
   },
   mounted() {
@@ -193,7 +229,13 @@ export default {
       this.current = arg.current || this.current || "";
     });
     ipcRenderer.on("set-history", (ev, history) => {
-      console.log(history);
+      this.history.filename = history.filename;
+      this.history.time_pos_percent =
+        Math.floor(history.time_pos_percent * 100) / 100;
+      this.history.show = true;
+      setTimeout(() => {
+        this.history.show = false;
+      }, 5000);
     });
   }
 };

@@ -119,11 +119,12 @@ export default {
 
       IPC.observe_property("media-title");
       IPC.on("media-title-change", _title => {
+        this.$emit(
+          "save_history",
+          this.playback_detail.time_pos / this.playback_detail.duration
+        ); // save last file's history
         if (!_title) {
-          this.$emit(
-            "end_file",
-            this.playback_detail.time_pos / this.playback_detail.duration
-          );
+          this.$emit("end_file");
           return;
         }
         // media title change means video change
@@ -133,21 +134,24 @@ export default {
           if (is_pause) this.is_playing = false;
         });
 
-        IPC.get_property("track-list").then(tracks => {
-          console.log(tracks);
-          tracks.forEach(tr => {
-            this.metadata.tracks[tr.type].push(tr);
-          });
-        });
+        this.update_tracks();
       });
 
       IPC.observe_property("duration");
       IPC.on("duration-change", dur => {
         this.playback_detail.duration = dur;
+        if (this.playback_detail.title) {
+          ipcRenderer.send("get-file-history");
+          ipcRenderer.once("set-file-history", (ev, pos_percent) => {
+            if(!pos_percent) return;
+            IPC.send_command("seek", [dur * pos_percent, "absolute"]);
+          });
+        }
       });
 
       IPC.observe_property("time-pos");
       IPC.on("time-pos-change", _time_pos => {
+        console.log("time-chage");
         // throttle
         _time_pos = Math.round(_time_pos);
         if (_time_pos !== this.playback_detail.time_pos) {
@@ -203,11 +207,12 @@ export default {
     stop() {
       document.removeEventListener("keydown", this.handle_key_event);
       window.removeEventListener("wheel", this.wheel_event);
-      IPC.send_command("stop");
       this.$emit(
-        "stop",
+        "save_history",
         this.playback_detail.time_pos / this.playback_detail.duration
       );
+      IPC.send_command("stop");
+      this.$emit("stop");
     },
     set_volume(e) {
       console.log(e);
@@ -369,6 +374,15 @@ export default {
         IPC.send_command(cmd.command, cmd.args);
       }
     },
+    update_tracks() {
+      IPC.get_property("track-list").then(tracks => {
+        tracks.forEach(tr => {
+          let list = this.metadata.tracks[tr.type];
+          list.length = 0;
+          this.metadata.tracks[tr.type].push(tr);
+        });
+      });
+    },
     set_track(track) {
       let prop = track.type.substr(0, 1) + "id"; // video-id = vid, so on
       IPC.set_property(prop, [track.id]).then(() => {
@@ -389,15 +403,11 @@ export default {
       if (
         !this.loaded ||
         !this.playback_detail.time_pos ||
-        this.playback_detail.duration
+        !this.playback_detail.duration
       )
         return true;
 
-      IPC.send_command("stop");
-      this.$emit(
-        "stop",
-        this.playback_detail.time_pos / this.playback_detail.duration
-      );
+      this.stop();
       return false;
     }
   },
