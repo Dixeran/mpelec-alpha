@@ -44,11 +44,20 @@
       "!**/*.mp4",
       "!mpv-1.dll"
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
     "win": {
       "icon": "builder_build/icon.ico",
       "asar": false,
       "compression": "maximum",
-      "target": "dir"
+      "fileAssociations": [{
+        "name": "Video",
+        "ext": ["mp4", "mkv"],
+        "role": "Viewer",
+        "icon": "builder_build/association.ico"
+      }]
     }
   }
 }
