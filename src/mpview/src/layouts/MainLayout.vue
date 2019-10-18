@@ -23,6 +23,15 @@
         </q-menu>
       </div>
       <q-space />
+      <q-btn
+        dense
+        flat
+        icon="settings_applications"
+        v-if="is_playing"
+        @click="open_control_window"
+      >
+        <q-tooltip>Control Window</q-tooltip>
+      </q-btn>
       <q-btn dense flat icon="minimize" @click="form_control('minimize')" />
       <q-btn dense flat icon="crop_square" @click="form_control('maximize')" />
       <q-btn dense flat icon="fullscreen" @click="form_control('fullscreen')" />
@@ -216,6 +225,9 @@ export default {
     restore_history() {
       ipcRenderer.send("open-list-file", this.history.filename);
       this.history.show = false;
+    },
+    open_control_window() {
+      ipcRenderer.send("open-control-window");
     }
   },
   mounted() {

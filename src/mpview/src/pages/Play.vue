@@ -151,7 +151,6 @@ export default {
 
       IPC.observe_property("time-pos");
       IPC.on("time-pos-change", _time_pos => {
-        console.log("time-chage");
         // throttle
         _time_pos = Math.round(_time_pos);
         if (_time_pos !== this.playback_detail.time_pos) {

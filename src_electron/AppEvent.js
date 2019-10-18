@@ -1,4 +1,5 @@
 const { ipcMain, app, BrowserWindow } = require("electron");
+const WindowConfig = require("./WindowConfig");
 const PSTATE = require("./PlayState");
 const IPC = require("./IPC_client");
 const Path = require("path");
@@ -200,18 +201,24 @@ module.exports = function(addon) {
   ipcMain.on("get-file-history", event => {
     console.log("requrest file history");
     let { temp_path, hash_tag } = shared.play_detail;
-    Fs.readFile(
-      Path.resolve(temp_path, hash_tag, "./history.json"),
-      (err, data) => {
-        if (err) {
-          console.log(err);
-          event.reply("set-file-history", null);
-        } else {
-          const d = JSON.parse(data);
-          event.reply("set-file-history", d.time_pos_percent);
-        }
+    let ck = setInterval(() => {
+      try {
+        const _ = Path.resolve(temp_path, hash_tag, "./history.json");
+        console.log(_);
+        Fs.readFile(_, (err, data) => {
+          if (err) {
+            console.log(err);
+            event.reply("set-file-history", null);
+          } else {
+            const d = JSON.parse(data);
+            event.reply("set-file-history", d.time_pos_percent);
+          }
+        });
+        clearInterval(ck);
+      } catch (e) {
+        console.log(e);
       }
-    );
+    }, 200);
   });
 
   ipcMain.on("request-thumbs", () => {
@@ -239,5 +246,18 @@ module.exports = function(addon) {
         thw
       );
     });
+  });
+
+  ipcMain.on("open-control-window", () => {
+    let ctrlWin = new BrowserWindow({
+      ...WindowConfig.CTRL
+    });
+    if (process.env.NODE_ENV === "deployment") {
+      ctrlWin.loadFile(
+        __dirname + "/src/mpview/dist/spa/index.html/#/ControlWindow/subtitle"
+      );
+    } else {
+      ctrlWin.loadURL("http://localhost:8080/#/ControlWindow/subtitle");
+    }
   });
 };

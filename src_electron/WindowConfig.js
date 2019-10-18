@@ -25,5 +25,16 @@ module.exports = {
       nodeIntegration: true,
       webviewTag: true
     }
+  },
+  CTRL: {
+    frame: false,
+    show: true,
+    resizable: false,
+    width: 250,
+    height: 250,
+    webPreferences: {
+      backgroundThrottling: false,
+      nodeIntegration: true
+    }
   }
 };
