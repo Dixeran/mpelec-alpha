@@ -29,6 +29,61 @@
       <q-btn dense flat icon="close" @click="form_control('close')" />
     </q-bar>
 
+    <!-- playlist -->
+    <q-drawer
+      v-model="drawer"
+      overlay
+      side="right"
+      behavior="desktop"
+      style="width: 300px"
+    >
+      <PlayList
+        :list="playlist"
+        :current="current"
+        @play="open_list_file"
+        @delete_item="delete_list_item"
+      />
+      <div class="q-mini-drawer-hide absolute" style="top: 100px; left: -17px">
+        <q-btn
+          v-if="drawer"
+          dense
+          round
+          push
+          unelevated
+          color="primary"
+          icon="chevron_right"
+          @click="drawer = false"
+        />
+      </div>
+    </q-drawer>
+    <!-- drawer mask -->
+    <div class="playlist-mask" v-if="drawer" @click.stop="drawer = false"></div>
+
+    <!-- history hint -->
+    <q-dialog v-model="history.show" seamless position="bottom">
+      <q-card style="width: 350px">
+        <q-linear-progress :value="history.time_pos_percent" color="pink" />
+
+        <q-card-section class="row items-center no-wrap">
+          <div>
+            <div class="text-grey">Last playback position</div>
+            <div class="text-weight-bold">{{ history.filename }}</div>
+          </div>
+
+          <q-space />
+
+          <q-btn
+            flat
+            round
+            icon="restore"
+            color="primary"
+            @click="restore_history"
+          />
+          <q-btn flat round icon="close" v-close-popup />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <!-- about dialog -->
     <q-dialog
       v-model="show_about"
@@ -72,8 +127,12 @@
       <!-- This is where pages get injected -->
       <router-view
         @fullscreen="form_control('fullscreen')"
+        @save_history="save_history"
+        @end_file="end_file"
         @stop="playback_stop"
-      />
+        @show_list="drawer = true"
+        ref="router_view"
+      ></router-view>
     </q-page-container>
   </q-layout>
 </template>
@@ -81,20 +140,46 @@
 <script>
 const { ipcRenderer, remote } = window.require("electron");
 const IPC = remote.require("./src_electron/IPC_client");
+import PlayList from "components/PlayList.vue";
+
 export default {
-  // name: 'LayoutName',
+  components: {
+    PlayList
+  },
   data() {
     return {
       is_playing: false,
       is_visible: true,
-      show_about: false
+      show_about: false,
+      drawer: false,
+      playlist: [],
+      current: "",
+      history: {
+        show: false,
+        time_pos_percent: 0,
+        filename: ""
+      }
     };
   },
   methods: {
     form_control(cmd) {
-      ipcRenderer.send(cmd);
+      if (cmd === "close") {
+        IPC.get_property("idle-active").then(is_idle => {
+          if (is_idle) {
+            ipcRenderer.send(cmd);
+          } else {
+            ipcRenderer.once("saved-history", () => {
+              ipcRenderer.send(cmd);
+            });
+            if (this.$refs.router_view.cleanUp()) {
+              ipcRenderer.send(cmd);
+            }
+          }
+        });
+      } else ipcRenderer.send(cmd);
     },
     playback_stop() {
+      // click stop btn
       ipcRenderer.send("playback-stop");
       this.$router.push("/");
       this.is_playing = false;
@@ -105,12 +190,52 @@ export default {
       if (!this.is_playing) return;
 
       this.is_visible = e.clientY < 100;
+    },
+    open_list_file(item) {
+      // this.$router.push("/");
+      ipcRenderer.send("open-list-file", item);
+    },
+    delete_list_item(item_list) {
+      item_list.forEach(item => {
+        this.playlist.splice(this.playlist.indexOf(item), 1);
+      });
+    },
+    save_history(pos_percent) {
+      ipcRenderer.send("save-history", pos_percent);
+    },
+    end_file() {
+      // naturally play to the end
+      let list_pos = this.playlist.indexOf(this.current);
+      if (list_pos === this.playlist.length - 1) {
+        //  last file ended
+        this.playback_stop();
+      } else {
+        this.open_list_file(this.playlist[list_pos + 1]);
+      }
+    },
+    restore_history() {
+      ipcRenderer.send("open-list-file", this.history.filename);
+      this.history.show = false;
     }
   },
   mounted() {
     ipcRenderer.on("playback-start", () => {
       this.is_playing = true;
       this.$router.push("play");
+    });
+    ipcRenderer.on("set-playlist", (event, arg) => {
+      console.log(arg);
+      this.playlist = arg.list || this.playlist || [];
+      this.current = arg.current || this.current || "";
+    });
+    ipcRenderer.on("set-history", (ev, history) => {
+      this.history.filename = history.filename;
+      this.history.time_pos_percent =
+        Math.floor(history.time_pos_percent * 100) / 100;
+      this.history.show = true;
+      setTimeout(() => {
+        this.history.show = false;
+      }, 5000);
     });
   }
 };
@@ -142,5 +267,16 @@ export default {
   &.visible {
     opacity: 1;
   }
+}
+
+.playlist-mask{
+  z-index 200;
+  position fixed;
+  left 0;
+  top 0;
+  height 100vh;
+  width 100vw;
+  opacity 0.1;
+  background-color rgba(0, 0, 0, 0.1);
 }
 </style>

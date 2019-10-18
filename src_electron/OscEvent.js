@@ -1,2 +1,2 @@
-const elc = require('electron');
+const elc = require("electron");
 const PSTATE = require("./PlayState");

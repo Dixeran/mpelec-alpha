@@ -39,6 +39,15 @@
 
       <!-- annoying tips -->
       <div class="annoy" v-if="tip.show">{{ tip.content }}</div>
+
+      <!-- activate playlist -->
+      <div
+        class="playlist-toggle"
+        :class="{ hide: !loaded || !is_visible }"
+        @click="$emit('show_list')"
+      >
+        <q-icon name="list"></q-icon>
+      </div>
     </div>
   </q-page>
 </template>
@@ -96,58 +105,79 @@ export default {
   },
   methods: {
     init() {
-      IPC.once("file-loaded", () => {
-        this.loaded = true;
-        console.log("start init");
-        IPC.get_property("volume").then(vol => {
-          this.playback_detail.volume = vol;
-        });
-        IPC.get_property("media-title").then(title => {
-          this.playback_detail.title = title;
-        });
-        IPC.get_property("duration").then(dur => {
-          this.playback_detail.duration = dur;
-        });
+      IPC.once("end-file", () => {
+        // failed before file-loaded
+        if (!this.loaded) {
+          this.$emit("stop");
+        }
+      });
+
+      IPC.observe_property("volume");
+      IPC.on("volume-change", vol => {
+        this.playback_detail.volume = vol;
+      });
+
+      IPC.observe_property("media-title");
+      IPC.on("media-title-change", _title => {
+        this.$emit(
+          "save_history",
+          this.playback_detail.time_pos / this.playback_detail.duration
+        ); // save last file's history
+        if (!_title) {
+          this.$emit("end_file");
+          return;
+        }
+        // media title change means video change
+        this.playback_detail.title = _title;
+        ipcRenderer.send("playback-start");
         IPC.get_property("pause").then(is_pause => {
           if (is_pause) this.is_playing = false;
         });
 
-        IPC.observe_property("time-pos");
-        IPC.on("time-pos-change", _time_pos => {
-          // throttle
-          _time_pos = Math.round(_time_pos);
-          if (_time_pos !== this.playback_detail.time_pos) {
-            this.playback_detail.time_pos = _time_pos;
-          }
-        });
-        IPC.observe_property("volume");
-        IPC.on("volume-change", _volume => {
-          this.playback_detail.volume = _volume;
-          this.annoy("Set volume: " + _volume + "%");
-        });
-        IPC.on("pause", () => {
-          this.is_playing = false;
-        });
-        IPC.on("unpause", () => {
-          this.is_playing = true;
-        });
-        IPC.on("end-file", () => {
-          // TODO: play to the end. Stop or play next video.
-          this.$emit("stop");
-        });
+        this.update_tracks();
+      });
 
-        IPC.get_property("track-list").then(tracks => {
-          console.log(tracks);
-          tracks.forEach(tr => {
-            this.metadata.tracks[tr.type].push(tr);
+      IPC.observe_property("duration");
+      IPC.on("duration-change", dur => {
+        this.playback_detail.duration = dur;
+        if (this.playback_detail.title) {
+          ipcRenderer.send("get-file-history");
+          ipcRenderer.once("set-file-history", (ev, pos_percent) => {
+            if(!pos_percent) return;
+            IPC.send_command("seek", [dur * pos_percent, "absolute"]);
           });
-        });
+        }
+      });
+
+      IPC.observe_property("time-pos");
+      IPC.on("time-pos-change", _time_pos => {
+        console.log("time-chage");
+        // throttle
+        _time_pos = Math.round(_time_pos);
+        if (_time_pos !== this.playback_detail.time_pos) {
+          this.playback_detail.time_pos = _time_pos;
+        }
+      });
+
+      IPC.observe_property("volume");
+      IPC.on("volume-change", _volume => {
+        this.playback_detail.volume = _volume;
+        this.annoy("Set volume: " + _volume + "%");
+      });
+
+      IPC.on("pause", () => {
+        this.is_playing = false;
+      });
+      IPC.on("unpause", () => {
+        this.is_playing = true;
+      });
+
+      IPC.once("playback-restart", () => {
+        this.loaded = true;
       });
     },
     check_visible(ev) {
-      if (ev.clientY > window.innerHeight - 100) {
-        this.is_visible = true;
-      } else this.is_visible = false;
+      this.is_visible = ev.clientY > window.innerHeight - 100;
     },
     annoy(msg) {
       if (this.tip.tick) {
@@ -177,7 +207,12 @@ export default {
     stop() {
       document.removeEventListener("keydown", this.handle_key_event);
       window.removeEventListener("wheel", this.wheel_event);
+      this.$emit(
+        "save_history",
+        this.playback_detail.time_pos / this.playback_detail.duration
+      );
       IPC.send_command("stop");
+      this.$emit("stop");
     },
     set_volume(e) {
       console.log(e);
@@ -339,6 +374,15 @@ export default {
         IPC.send_command(cmd.command, cmd.args);
       }
     },
+    update_tracks() {
+      IPC.get_property("track-list").then(tracks => {
+        tracks.forEach(tr => {
+          let list = this.metadata.tracks[tr.type];
+          list.length = 0;
+          this.metadata.tracks[tr.type].push(tr);
+        });
+      });
+    },
     set_track(track) {
       let prop = track.type.substr(0, 1) + "id"; // video-id = vid, so on
       IPC.set_property(prop, [track.id]).then(() => {
@@ -352,6 +396,19 @@ export default {
     },
     get_thumbs() {
       ipcRenderer.send("request-thumbs");
+    },
+    cleanUp() {
+      // Noted that sometimes playback-restart is received,
+      // but time_pos is still not available.
+      if (
+        !this.loaded ||
+        !this.playback_detail.time_pos ||
+        !this.playback_detail.duration
+      )
+        return true;
+
+      this.stop();
+      return false;
     }
   },
   created() {
@@ -381,7 +438,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 5px 20px 0px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.2);
   }
 }
 
@@ -423,5 +480,33 @@ export default {
   background: $blue-grey-8;
   color: white;
   -webkit-user-select: none;
+}
+
+//  toggle playlist
+.playlist-toggle{
+  position absolute;
+  right 0;
+  top 2rem;
+  width 24px;
+  height 2.5rem;
+  transform translateY(-50%);
+  color whitesmoke
+  background $blue-grey;
+  margin-top: 24px;
+  border-radius: 10px 0 0 10px;
+  box-shadow: 0 7px 20px 0 rgba(0,0,0,0.2);
+  cursor: pointer;
+
+  text-align center;
+  display flex;
+  align-items center;
+  justify-content center;
+
+  transition all ease 0.2s;
+
+  &:hover{
+    height 4rem;
+    width 26px;
+  }
 }
 </style>

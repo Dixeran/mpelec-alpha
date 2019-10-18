@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "electron . test.mp4",
-    "start": "electron .",
+    "start": "chcp 65001 && electron .",
     "build:native": "cmake-js rebuild && @powershell cp mpv-1.dll build/Release/mpv-1.dll",
     "build:dir": "electron-builder --dir",
     "build:win": "electron-builder --win"
@@ -44,11 +44,20 @@
       "!**/*.mp4",
       "!mpv-1.dll"
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
     "win": {
       "icon": "builder_build/icon.ico",
       "asar": false,
       "compression": "maximum",
-      "target": "dir"
+      "fileAssociations": [{
+        "name": "Video",
+        "ext": ["mp4", "mkv"],
+        "role": "Viewer",
+        "icon": "builder_build/association.ico"
+      }]
     }
   }
 }

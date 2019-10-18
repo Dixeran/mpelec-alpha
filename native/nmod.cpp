@@ -1,5 +1,6 @@
 #include <napi.h>
 #include <Windows.h>
+#include <shlwapi.h>
 #include <string>
 #include "include/client.h"
 #include "GenThumbsAsync.h"
@@ -106,6 +107,34 @@ Napi::Value GenThumbs(const Napi::CallbackInfo &info)
     return env.Null();
 }
 
+std::wstring s2ws(const std::string &s)
+{
+    int len;
+    int slength = (int)s.length() + 1;
+    len = MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, 0, 0);
+    wchar_t *buf = new wchar_t[len];
+    MultiByteToWideChar(CP_ACP, 0, s.c_str(), slength, buf, len);
+    std::wstring r(buf);
+    delete[] buf;
+    return r;
+}
+
+Napi::Value CompareStrLogical(const Napi::CallbackInfo &info)
+{
+    Napi::Env env = info.Env();
+    if (info.Length() < 2)
+    {
+        Napi::TypeError::New(env, "Need more args.").ThrowAsJavaScriptException();
+        return env.Null();
+    }
+
+    std::string a = info[0].As<Napi::String>().Utf8Value();
+    std::string b = info[1].As<Napi::String>().Utf8Value();
+    std::wstring _a = s2ws(a), _b = s2ws(b);
+    int result = StrCmpLogicalW(_a.c_str(), _b.c_str());
+    return Napi::Number::New(env, result);
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
     exports.Set(Napi::String::New(env, "init"), Napi::Function::New(env, InitMpv));
@@ -113,6 +142,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
     exports.Set(Napi::String::New(env, "play"), Napi::Function::New(env, Play));
     exports.Set(Napi::String::New(env, "get_path"), Napi::Function::New(env, GetConfPath));
     exports.Set(Napi::String::New(env, "gen_thumbs"), Napi::Function::New(env, GenThumbs));
+    exports.Set(Napi::String::New(env, "cmp_str_logical"), Napi::Function::New(env, CompareStrLogical));
     return exports;
 }
 
