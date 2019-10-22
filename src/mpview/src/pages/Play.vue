@@ -3,9 +3,14 @@
     <!-- mouse event area -->
     <div
       class="event-area row justify-center items-center"
+      :class="{ 'has-file': has_sub_over }"
       ref="event_area"
       @click="mouse_event($event, 'click')"
       @dblclick="mouse_event($event, 'dblclick')"
+      @dragenter.prevent
+      @dragover.prevent="has_sub_over = true"
+      @dragleave="has_sub_over = false"
+      @drop.prevent="drop_sub($event)"
     >
       <div class="pause-indicator" v-if="!is_playing">
         <q-icon name="pause"></q-icon>
@@ -95,7 +100,8 @@ export default {
         content: "",
         show: false,
         tick: undefined
-      }
+      },
+      has_sub_over: false
     };
   },
   components: {
@@ -143,7 +149,7 @@ export default {
         if (this.playback_detail.title) {
           ipcRenderer.send("get-file-history");
           ipcRenderer.once("set-file-history", (ev, pos_percent) => {
-            if(!pos_percent) return;
+            if (!pos_percent) return;
             IPC.send_command("seek", [dur * pos_percent, "absolute"]);
           });
         }
@@ -408,6 +414,15 @@ export default {
 
       this.stop();
       return false;
+    },
+    // add subtitle
+    drop_sub(event) {
+      this.has_sub_over = false;
+      let file = event.dataTransfer.files[0];
+      let { path } = file;
+      IPC.send_command("sub-add", [path]).then(() => {
+        this.update_tracks();
+      });
     }
   },
   created() {
@@ -426,6 +441,7 @@ export default {
   left: 0;
   right: 0;
   z-index: 5;
+  transition all ease 0.2s;
 
   & > .pause-indicator {
     width: 3rem;
@@ -438,6 +454,10 @@ export default {
     justify-content: center;
     align-items: center;
     box-shadow: 0 5px 20px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  &.has-file{
+    background-color rgba(255, 255, 255, 0.1);
   }
 }
 
