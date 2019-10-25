@@ -199,10 +199,10 @@ module.exports = function(addon) {
   });
 
   ipcMain.on("get-file-history", event => {
-    console.log("requrest file history");
-    let { temp_path, hash_tag } = shared.play_detail;
+    console.log("request file history");
     let ck = setInterval(() => {
       try {
+        let { temp_path, hash_tag } = shared.play_detail;
         const _ = Path.resolve(temp_path, hash_tag, "./history.json");
         console.log(_);
         Fs.readFile(_, (err, data) => {
