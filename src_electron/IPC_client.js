@@ -8,10 +8,15 @@ let observer_id = 0,
 // Register EventEmitter
 class MpvEvent extends events {
   init() {
-    socket.connect({
-      path: "\\\\.\\pipe\\mpvsocket"
+    return new Promise((resolve, reject) => {
+      socket.connect({
+        path: "\\\\.\\pipe\\mpvsocket"
+      });
+      this.get_property("idle-active");
+      socket.once("connect", () => {
+        resolve();
+      });
     });
-    return this;
   }
   set_property(name, args) {
     return this.send_command("set_property", [name, ...args]);

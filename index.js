@@ -51,7 +51,7 @@ global.openfile = openfile;
 // Also, call pwin.show() will cause a black mask, ALWAYS use pwin.restore() instead.
 // electron.app.disableHardwareAcceleration();
 
-electron.app.on("ready", function() {
+electron.app.on("ready", async function() {
   let _aux = new electron.BrowserWindow({
     show: false
   });
@@ -82,6 +82,8 @@ electron.app.on("ready", function() {
   // bind window movement
   addon.bind_window(hwnd_osc, hwnd_pwin);
 
+  await IPC.init();
+
   if (process.env.NODE_ENV === "deployment") {
     osc.loadFile(__dirname + "/src/mpview/dist/spa/index.html").then(loaded);
   } else {
@@ -97,7 +99,7 @@ electron.app.on("ready", function() {
     osc.setBackgroundColor("#00FFFFFF");
     console.log("path:");
     console.log(addon.get_path());
-    IPC.init();
+    // IPC.init();
     console.log("ready to play");
 
     // use argv to open file
