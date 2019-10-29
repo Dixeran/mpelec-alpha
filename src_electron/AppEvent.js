@@ -3,6 +3,7 @@ const WindowConfig = require("./WindowConfig");
 const PSTATE = require("./PlayState");
 const IPC = require("./IPC_client");
 const Path = require("path");
+const Url = require("url");
 const Crypto = require("crypto");
 const Fs = require("fs");
 
@@ -253,9 +254,12 @@ module.exports = function(addon) {
       ...WindowConfig.CTRL
     });
     if (process.env.NODE_ENV === "deployment") {
-      ctrlWin.loadFile(
-        __dirname + "/src/mpview/dist/spa/index.html/#/ControlWindow/subtitle"
+      let _url = new URL(
+        "#/ControlWindow/subtitle",
+        Path.join(shared.__dirname, "/src/mpview/dist/spa/index.html")
       );
+      _url = Url.format(_url);
+      ctrlWin.loadURL(_url);
     } else {
       ctrlWin.loadURL("http://localhost:8080/#/ControlWindow/subtitle");
     }
