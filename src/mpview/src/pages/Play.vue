@@ -381,10 +381,12 @@ export default {
     },
     update_tracks() {
       IPC.get_property("track-list").then(tracks => {
+        let tks = this.metadata.tracks;
+        for (let track in tks) {
+          tks[track].length = 0; // clear all track data
+        }
         tracks.forEach(tr => {
-          let list = this.metadata.tracks[tr.type];
-          list.length = 0;
-          this.metadata.tracks[tr.type].push(tr);
+          tks[tr.type].push(tr);
         });
       });
     },

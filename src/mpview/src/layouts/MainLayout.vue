@@ -70,13 +70,18 @@
 
     <!-- history hint -->
     <q-dialog v-model="history.show" seamless position="bottom">
-      <q-card style="width: 350px">
+      <q-card>
         <q-linear-progress :value="history.time_pos_percent" color="pink" />
 
         <q-card-section class="row items-center no-wrap">
           <div>
             <div class="text-grey">Last playback position</div>
-            <div class="text-weight-bold">{{ history.filename }}</div>
+            <div
+              class="text-weight-bold"
+              style="max-width: 300px; text-overflow: ellipsis"
+            >
+              {{ history.filename }}
+            </div>
           </div>
 
           <q-space />
